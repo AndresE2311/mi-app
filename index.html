@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finanzas Personales</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="headerInner">
+    <span class="headerIcon">💰</span>
+    <div>
+      <h1 class="headerTitle">Finanzas</h1>
+      <p class="headerSub">Tu dinero, bajo control</p>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ══════ DASHBOARD ══════ -->
+<section id="dashboard" class="page active">
+  <div class="dashboard">
+    <div class="card principal">
+      <h3>Saldo Disponible (Caja)</h3>
+      <h1 id="saldo">$0</h1>
+      <span id="fechaActual"></span>
+    </div>
+    <div class="resumen">
+      <div class="mini ingreso">
+        <div class="miniLeft"><span class="miniIcon">💵</span><span class="miniLabel">Ingresos</span></div>
+        <h2 id="ingresos">$0</h2>
+      </div>
+      <div class="mini gasto">
+        <div class="miniLeft"><span class="miniIcon">💸</span><span class="miniLabel">Gastos caja</span></div>
+        <h2 id="gastos">$0</h2>
+      </div>
+      <div class="mini ahorro">
+        <div class="miniLeft"><span class="miniIcon">🏦</span><span class="miniLabel">Ahorro / Caja</span></div>
+        <h2 id="ahorro">$0</h2>
+      </div>
+      <div class="mini inversiones">
+        <div class="miniLeft"><span class="miniIcon">📈</span><span class="miniLabel">Inversiones</span></div>
+        <h2 id="valorInversiones">$0</h2>
+      </div>
+      <div class="mini deuda">
+        <div class="miniLeft"><span class="miniIcon">💳</span><span class="miniLabel">Deuda Neta</span></div>
+        <h2 id="deudaNeta">$0</h2>
+      </div>
+      <div class="mini patrimonio">
+        <div class="miniLeft"><span class="miniIcon">💎</span><span class="miniLabel">Patrimonio</span></div>
+        <h2 id="patrimonio">$0</h2>
+      </div>
+      <div class="mini" style="border-left:4px solid #a78bfa">
+        <div class="miniLeft"><span class="miniIcon">📊</span><span class="miniLabel">Tasa Ahorro</span></div>
+        <h2 id="tasaAhorro">0%</h2>
+      </div>
+    </div>
+
+    <!-- Nota informativa del modelo -->
+    <div style="background:#1e293b;border-radius:14px;padding:14px;margin-top:4px;font-size:12px;color:#64748b;line-height:1.6">
+      <b style="color:#94a3b8">¿Cómo se calcula?</b><br>
+      Saldo caja = Ingresos − Gastos − Pagos de deuda − Traslados a inversión<br>
+      Patrimonio = Saldo caja + Inversiones − Deuda neta
+    </div>
+  </div>
+</section>
+
+<!-- ══════ MOVIMIENTOS ══════ -->
+<section id="movimientos" class="page">
+  <h2>💸 Registrar Movimiento</h2>
+  <div class="formulario">
+
+    <select id="tipo" onchange="actualizarTipoMovimiento()">
+      <option value="ingreso">💵 Ingreso</option>
+      <option value="gasto">💸 Gasto (sale de caja)</option>
+      <option value="pago_deuda_cuota">💳 Pago de Deuda (sale de caja)</option>
+
+    </select>
+
+    <!-- Visible solo para pago de deuda -->
+    <div id="filaDeudaVinculo" style="display:none">
+      <select id="selDeudaVinculo" style="width:100%;padding:12px;border:1.5px solid #1e3a5f;border-radius:12px;background:#1e293b;color:#e2e8f0;font-size:14px;-webkit-appearance:none">
+        <option value="">— Vincular a deuda (opcional) —</option>
+      </select>
+    </div>
+
+    <select id="categoria" onchange="cargarSubcategorias()">
+      <option value="">Categoría</option>
+      <option>Entradas</option><option>Mercado</option><option>Restaurante</option><option>Transporte</option>
+      <option>Vivienda</option><option>Ocio</option><option>Salud</option>
+      <option>Educación</option><option>Emergencia</option><option>Servicios</option><option>Otros</option>
+    </select>
+
+    <select id="subcategoria"><option value="">Subcategoría</option></select>
+
+    <select id="metodoPago">
+      <option>Efectivo</option><option>Débito</option>
+      <option>Banco Bogotá Crédito</option><option>Davivienda Crédito</option>
+      <option>Nequi</option><option>Daviplata</option><option>Transferencia</option>
+    </select>
+
+    <input type="date" id="fecha">
+    <input type="text" id="descripcion" placeholder="Descripción">
+    <input type="number" id="valor" placeholder="Valor">
+    <button onclick="agregarMovimiento()">Guardar Movimiento</button>
+  </div>
+
+  <div id="listaMovimientos" class="listaMovimientos"></div>
+</section>
+
+<!-- ══════ INVERSIONES ══════ -->
+<section id="inversiones" class="page">
+  <h2>📈 Mis Inversiones</h2>
+  <div class="formulario">
+
+    <select id="tipoActivo" onchange="actualizarFormInversion()">
+      <option>Acción</option><option>ETF</option><option>Criptomoneda</option>
+      <option>CDT</option><option>Fondo</option><option>Finca Raíz</option><option>Efectivo</option>
+    </select>
+
+    <input id="invNombre" placeholder="Nombre (ej: AAPL, CDT Bancolombia, Apto 101)">
+
+    <div id="filaCanPrecio">
+      <input id="invCantidad"    type="number" placeholder="Cantidad de unidades" style="margin-bottom:10px;width:100%;padding:13px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:15px;outline:none">
+      <input id="invPrecioCompra" type="number" placeholder="Precio de compra por unidad" style="margin-bottom:10px;width:100%;padding:13px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:15px;outline:none">
+      <input id="invPrecioActual" type="number" placeholder="Precio actual por unidad" style="width:100%;padding:13px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:15px;outline:none">
+    </div>
+    <div id="filaCapital"      style="display:none"><input id="invCapital"   type="number" placeholder="Capital / valor nominal" style="width:100%;padding:13px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:15px;outline:none"></div>
+    <div id="filaTasaEA"       style="display:none"><input id="invTasaEA"    type="number" placeholder="Tasa EA anual (%)" style="width:100%;padding:13px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:15px;outline:none"></div>
+    <div id="filaFechaInicio"  style="display:none"><input id="invFechaInicio" type="date" style="width:100%;padding:13px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:15px;outline:none"><p style="font-size:11px;color:#64748b;margin-top:4px">Fecha de inicio</p></div>
+    <div id="filaFechaVcto"    style="display:none"><input id="invFechaVcto" type="date" style="width:100%;padding:13px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:15px;outline:none"><p style="font-size:11px;color:#64748b;margin-top:4px">Fecha de vencimiento</p></div>
+    <div id="filaValorCompra"  style="display:none"><input id="invValorCompra" type="number" placeholder="Valor de compra / avalúo" style="width:100%;padding:13px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:15px;outline:none"></div>
+    <div id="filaValorActual"  style="display:none"><input id="invValorActual" type="number" placeholder="Valor de mercado actual" style="width:100%;padding:13px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:15px;outline:none"></div>
+
+    <select id="invOrigen">
+      <option value="externo">💼 Capital externo (no descuenta de caja)</option>
+      <option value="caja">🏦 Viene de mi caja / ahorro (descuenta de caja)</option>
+    </select>
+
+    <button onclick="agregarInversion()">Agregar Inversión</button>
+  </div>
+  <div id="tablaInversiones"></div>
+</section>
+
+<!-- ══════ DEUDAS ══════ -->
+<section id="deudas" class="page">
+  <h2>💳 Mis Deudas</h2>
+  <div style="max-width:500px;margin:0 auto 18px">
+    <button onclick="abrirModalDeuda()" style="width:100%;padding:15px;font-size:15px;background:linear-gradient(135deg,#f97316,#ef4444)">+ Nueva Deuda</button>
+  </div>
+  <div id="listaDeudas" style="max-width:500px;margin:auto"></div>
+</section>
+
+<!-- ══════ ESTADÍSTICAS ══════ -->
+<section id="estadisticas" class="page">
+  <h2>📊 Estadísticas</h2>
+
+  <!-- KPIs del período seleccionado -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:500px;margin:0 auto 16px">
+    <div style="background:#1e293b;border-radius:13px;padding:13px;text-align:center">
+      <p style="font-size:11px;color:#94a3b8;margin:0 0 3px">Ingresos período</p>
+      <p id="statIngresos" style="font-size:17px;font-weight:700;color:#22c55e;margin:0">$0</p>
+    </div>
+    <div style="background:#1e293b;border-radius:13px;padding:13px;text-align:center">
+      <p style="font-size:11px;color:#94a3b8;margin:0 0 3px">Gastos período</p>
+      <p id="statGastos" style="font-size:17px;font-weight:700;color:#ef4444;margin:0">$0</p>
+    </div>
+    <div style="background:#1e293b;border-radius:13px;padding:13px;text-align:center">
+      <p style="font-size:11px;color:#94a3b8;margin:0 0 3px">Pagos deuda</p>
+      <p id="statPagos" style="font-size:17px;font-weight:700;color:#f59e0b;margin:0">$0</p>
+    </div>
+    <div style="background:#1e293b;border-radius:13px;padding:13px;text-align:center">
+      <p style="font-size:11px;color:#94a3b8;margin:0 0 3px">Balance neto</p>
+      <p id="statBalance" style="font-size:17px;font-weight:700;color:#60a5fa;margin:0">$0</p>
+    </div>
+  </div>
+
+  <!-- Selector de mes -->
+  <div style="max-width:500px;margin:0 auto 16px">
+    <p style="font-size:12px;color:#94a3b8;margin-bottom:8px">Filtrar por mes:</p>
+    <div id="selectorMeses" class="selectorMeses"></div>
+  </div>
+
+  <div class="graficas">
+    <div class="graficaCard"><h3>Ingresos vs Gastos vs Deuda</h3><canvas id="graficaPrincipal"></canvas></div>
+    <div class="graficaCard"><h3>Evolución Mensual (Ingresos vs Gastos)</h3><canvas id="graficaMensual"></canvas></div>
+    <div class="graficaCard"><h3>Evolución Deuda Mensual</h3><canvas id="graficaDeuda"></canvas></div>
+    <div class="graficaCard"><h3>Gastos por Categoría</h3><canvas id="graficaCategorias"></canvas></div>
+    <div class="graficaCard"><h3>Gastos por Categoría por Mes</h3><canvas id="graficaCategoriasMensual"></canvas></div>
+    <div class="graficaCard"><h3>Métodos de Pago</h3><canvas id="graficaMetodos"></canvas></div>
+    <div class="graficaCard"><h3>Portafolio de Inversiones</h3><canvas id="graficaInversiones"></canvas></div>
+    <div class="graficaCard"><h3>Fuentes de Ingresos</h3><canvas id="graficaFuentesIngresos"></canvas></div>
+  </div>
+</section>
+
+<!-- ══════ HERRAMIENTAS ══════ -->
+<section id="configuracion" class="page">
+  <h2>⚙ Herramientas</h2>
+  <div class="configuracion">
+    <button onclick="exportarExcel()">↗️ Exportar a Excel</button>
+    <button onclick="generarInformeMensual()">📅 Informe Mensual</button>
+    <button onclick="generarEstadoGeneral()">💎 Estado General</button>
+  </div>
+</section>
+
+</main>
+
+<!-- ══════ NAV (6 tabs) ══════ -->
+<nav class="bottomNav">
+  <button onclick="abrirPagina('dashboard')">🏠<br><span>Inicio</span></button>
+  <button onclick="abrirPagina('movimientos')">💸<br><span>Movimientos</span></button>
+  <button onclick="abrirPagina('inversiones')">📈<br><span>Inversiones</span></button>
+  <button onclick="abrirPagina('deudas')">💳<br><span>Deudas</span></button>
+  <button onclick="abrirPagina('estadisticas')">📊<br><span>Gráficas</span></button>
+  <button onclick="abrirPagina('configuracion')">⚙<br><span>Ajustes</span></button>
+</nav>
+
+<!-- ══════ MODAL EDITAR MOVIMIENTO ══════ -->
+<div id="modalEditar" class="modalOverlay">
+  <div class="modalBox">
+    <h3 style="color:#60a5fa;margin:0 0 16px;font-size:16px">✏ Editar Movimiento</h3>
+    <input type="hidden" id="editId">
+    <div class="modalForm">
+      <input id="editDesc" placeholder="Descripción">
+      <input id="editValor" type="number" placeholder="Valor">
+      <select id="editTipoMov">
+        <option value="ingreso">Ingreso</option>
+        <option value="gasto">Gasto</option>
+        <option value="pago_deuda_cuota">Pago de Deuda</option>
+
+      </select>
+      <select id="editCategoria">
+        <option value="">Categoría</option>
+        <option>Entradas</option><option>Mercado</option><option>Restaurante</option><option>Transporte</option>
+        <option>Vivienda</option><option>Ocio</option><option>Salud</option>
+        <option>Educación</option><option>Emergencia</option><option>Servicios</option><option>Otros</option>
+      </select>
+      <select id="editMetodo">
+        <option>Efectivo</option><option>Débito</option><option>Banco Bogotá Crédito</option>
+        <option>Davivienda Crédito</option><option>Nequi</option><option>Daviplata</option><option>Transferencia</option>
+      </select>
+      <input id="editFecha" type="date">
+    </div>
+    <div class="modalBtns">
+      <button onclick="guardarEdicion()">💾 Guardar</button>
+      <button onclick="cerrarModalEditar()" class="btnCancelar">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL NUEVA DEUDA ══════ -->
+<div id="modalDeuda" class="modalOverlay">
+  <div class="modalBox">
+    <h3 style="color:#f97316;margin:0 0 16px;font-size:16px">💳 Nueva Deuda</h3>
+    <div class="modalForm">
+      <input id="dNombre" placeholder="Nombre (ej: Tarjeta Bogotá, Hipoteca, Familiar)">
+      <select id="dTipo">
+        <option value="tarjeta_credito">Tarjeta de Crédito</option>
+        <option value="credito_banco">Crédito Bancario</option>
+        <option value="hipoteca">Hipoteca / Inmobiliaria</option>
+        <option value="personal">Deuda Personal (familia/amigos)</option>
+        <option value="otro">Otro</option>
+      </select>
+      <input id="dCapital" type="number" placeholder="Capital total de la deuda">
+      <input id="dFecha" type="date">
+      <select id="dTipoTasa" onchange="actualizarVisibilidadTasa()">
+        <option value="fija">Tasa fija mensual</option>
+        <option value="variable">Tasa variable (se ingresa en cada pago)</option>
+        <option value="sin_tasa">Sin interés (familiar / amigos)</option>
+      </select>
+      <div id="filaTasaFija"><input id="dTasaFija" type="number" step="0.01" placeholder="Tasa mensual % (ej: 1.8)"></div>
+      <div id="filaFrecuencia">
+        <select id="dFrecuencia">
+          <option value="mensual">Pago mensual</option>
+          <option value="quincenal">Pago quincenal</option>
+          <option value="libre">Pago libre</option>
+        </select>
+      </div>
+      <div id="filaCuotas"><input id="dCuotas" type="number" placeholder="Nº de cuotas (0 = indefinido)"></div>
+    </div>
+    <div class="modalBtns">
+      <button onclick="agregarDeuda()" style="background:linear-gradient(135deg,#f97316,#ef4444)">+ Agregar</button>
+      <button onclick="cerrarModalDeuda()" class="btnCancelar">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MODAL PAGO DEUDA ══════ -->
+<div id="modalPagoDeuda" class="modalOverlay">
+  <div class="modalBox">
+    <h3 id="tituloPago" style="color:#22c55e;margin:0 0 16px;font-size:15px">Registrar Pago</h3>
+    <input type="hidden" id="pagoDeudaId">
+    <div class="modalForm">
+      <input id="pagoFecha" type="date">
+      <input id="pagoCuota" type="number" placeholder="Valor total del pago (cuota completa)">
+      <input id="pagoCapital" type="number" placeholder="¿Cuánto de ese pago es capital?">
+      <p style="font-size:12px;color:#64748b;margin:0">El resto se calcula automáticamente como interés.</p>
+      <div id="filaPagoTasaVar" style="display:none">
+        <input id="pagoTasaVar" type="number" step="0.01" placeholder="Tasa aplicada este período (%)">
+      </div>
+    </div>
+    <div class="modalBtns">
+      <button onclick="registrarPagoDeuda()" style="background:linear-gradient(135deg,#22c55e,#16a34a)">✓ Registrar</button>
+      <button onclick="cerrarPagoDeuda()" class="btnCancelar">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="script.js"></script>
+<script>actualizarFormInversion();</script>
+
+</body>
+</html>
