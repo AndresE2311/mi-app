@@ -32,22 +32,346 @@
 
    ════════════════════════════════════════════════════════════ */
 
-/* ── ESTADO GLOBAL ── */
-let movimientos = JSON.parse(localStorage.getItem("movimientos")) || [];
-let inversiones = JSON.parse(localStorage.getItem("inversiones")) || [];
-let deudas      = JSON.parse(localStorage.getItem("deudas"))      || [];
+/* ── SUPABASE CONFIG ── */
+const SUPABASE_URL = "https://uvogztpqqjbtdmkieybs.supabase.co";
+const SUPABASE_KEY = "sb_publishable_bNEN9D3vbC9SBvnnOwBx4A_4m37RiRe";
 
-// Migración: asignar IDs a registros sin ID
-[movimientos, inversiones, deudas].forEach(arr =>
-  arr.forEach((x, i) => { if (!x.id) x.id = Date.now() + i + Math.random(); })
-);
+/* ══════════════════════════════════════════════════════════════
+   AUTH — Sesión y token de usuario
+   ══════════════════════════════════════════════════════════════ */
+let _authToken  = null; // JWT del usuario autenticado
+let _currentUser = null; // objeto usuario
 
+function authHeaders() {
+  return {
+    "Content-Type": "application/json",
+    "apikey": SUPABASE_KEY,
+    "Authorization": `Bearer ${_authToken || SUPABASE_KEY}`
+  };
+}
 
-const save = () => {
-  localStorage.setItem("movimientos", JSON.stringify(movimientos));
-  localStorage.setItem("inversiones", JSON.stringify(inversiones));
-  localStorage.setItem("deudas",      JSON.stringify(deudas));
+/* Registrar nuevo usuario */
+async function signUp(email, password) {
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY },
+    body: JSON.stringify({ email, password })
+  });
+  return r.json();
+}
+
+/* Iniciar sesión */
+async function signIn(email, password) {
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY },
+    body: JSON.stringify({ email, password })
+  });
+  return r.json();
+}
+
+/* Cerrar sesión */
+async function signOut() {
+  await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+    method: "POST",
+    headers: authHeaders()
+  });
+  _authToken   = null;
+  _currentUser = null;
+  localStorage.removeItem("sb_session");
+  mostrarPantallaAuth();
+}
+
+/* Refrescar token */
+async function refreshToken(refresh_token) {
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY },
+    body: JSON.stringify({ refresh_token })
+  });
+  return r.json();
+}
+
+/* Guardar sesión en localStorage */
+function guardarSesion(data) {
+  const sesion = {
+    access_token:  data.access_token,
+    refresh_token: data.refresh_token,
+    expires_at:    Date.now() + (data.expires_in || 3600) * 1000,
+    user:          data.user
+  };
+  localStorage.setItem("sb_session", JSON.stringify(sesion));
+  _authToken   = sesion.access_token;
+  _currentUser = sesion.user;
+}
+
+/* Intentar restaurar sesión guardada */
+async function restaurarSesion() {
+  const raw = localStorage.getItem("sb_session");
+  if (!raw) return false;
+  try {
+    const s = JSON.parse(raw);
+    // Si el token expira en menos de 5 min, refrescar
+    if (Date.now() > s.expires_at - 300000) {
+      const data = await refreshToken(s.refresh_token);
+      if (data.access_token) { guardarSesion(data); return true; }
+      localStorage.removeItem("sb_session");
+      return false;
+    }
+    _authToken   = s.access_token;
+    _currentUser = s.user;
+    return true;
+  } catch { return false; }
+}
+
+/* ── Pantalla de Auth (login/registro) ── */
+function mostrarPantallaAuth() {
+  document.getElementById("appShell").style.display   = "none";
+  document.getElementById("authScreen").style.display = "flex";
+  document.getElementById("authEmail").value    = "";
+  document.getElementById("authPassword").value = "";
+  document.getElementById("authError").textContent = "";
+}
+
+function mostrarApp() {
+  document.getElementById("authScreen").style.display = "none";
+  document.getElementById("appShell").style.display   = "block";
+  // Mostrar email del usuario en el header
+  if (_currentUser) {
+    let badge = document.getElementById("userBadge");
+    if (!badge) {
+      badge = document.createElement("div");
+      badge.id = "userBadge";
+      badge.style.cssText = "margin-left:auto;display:flex;align-items:center;gap:8px";
+      badge.innerHTML = `<span id="userEmail" style="font-size:11px;color:#64748b;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+        <button onclick="signOut()" style="background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3);padding:5px 11px;font-size:11px;border-radius:8px;font-weight:600">Salir</button>`;
+      document.querySelector(".headerInner").appendChild(badge);
+    }
+    document.getElementById("userEmail").textContent = _currentUser.email;
+  }
+}
+
+/* ── Lógica del formulario de auth ── */
+let _modoAuth = "login"; // "login" | "registro"
+
+function toggleModoAuth() {
+  _modoAuth = _modoAuth === "login" ? "registro" : "login";
+  const esRegistro = _modoAuth === "registro";
+  document.getElementById("authTitle").textContent  = esRegistro ? "Crear cuenta" : "Iniciar sesión";
+  document.getElementById("authSubmit").textContent = esRegistro ? "Registrarme" : "Entrar";
+  document.getElementById("authToggleText").textContent = esRegistro
+    ? "¿Ya tienes cuenta? " : "¿No tienes cuenta? ";
+  document.getElementById("authToggleLink").textContent = esRegistro
+    ? "Inicia sesión" : "Regístrate";
+  document.getElementById("authError").textContent = "";
+}
+
+async function submitAuth() {
+  const email    = document.getElementById("authEmail").value.trim();
+  const password = document.getElementById("authPassword").value;
+  const errEl    = document.getElementById("authError");
+  const btn      = document.getElementById("authSubmit");
+
+  if (!email || !password) { errEl.textContent = "Completa todos los campos."; return; }
+  if (password.length < 6) { errEl.textContent = "La contraseña debe tener al menos 6 caracteres."; return; }
+
+  btn.disabled = true;
+  btn.textContent = "Cargando...";
+  errEl.textContent = "";
+
+  try {
+    let data;
+    if (_modoAuth === "registro") {
+      data = await signUp(email, password);
+      if (data.error) { errEl.textContent = traducirError(data.error.message || data.msg); btn.disabled=false; btn.textContent="Registrarme"; return; }
+      // Si requiere confirmación de email
+      if (data.user && !data.access_token) {
+        errEl.style.color = "#22c55e";
+        errEl.textContent = "✓ Revisa tu email para confirmar tu cuenta.";
+        btn.disabled=false; btn.textContent="Registrarme"; return;
+      }
+    } else {
+      data = await signIn(email, password);
+      if (data.error || data.error_description) {
+        errEl.textContent = traducirError(data.error_description || data.error);
+        btn.disabled=false; btn.textContent="Entrar"; return;
+      }
+    }
+    if (data.access_token) {
+      guardarSesion(data);
+      mostrarApp();
+      cargarDatos();
+    }
+  } catch(e) {
+    errEl.textContent = "Error de conexión. Intenta de nuevo.";
+  }
+  btn.disabled=false;
+  btn.textContent = _modoAuth === "registro" ? "Registrarme" : "Entrar";
+}
+
+function traducirError(msg) {
+  if (!msg) return "Error desconocido.";
+  if (msg.includes("Invalid login"))    return "Email o contraseña incorrectos.";
+  if (msg.includes("already registered")) return "Este email ya está registrado.";
+  if (msg.includes("Email not confirmed")) return "Confirma tu email antes de entrar.";
+  if (msg.includes("Password should"))   return "La contraseña debe tener al menos 6 caracteres.";
+  return msg;
+}
+
+/* ── Presionar Enter en el formulario ── */
+document.addEventListener("keydown", e => {
+  if (e.key === "Enter" && document.getElementById("authScreen").style.display !== "none") {
+    submitAuth();
+  }
+});
+
+/* ══════════════════════════════════════════════════════════════
+   CLIENTE SUPABASE (usa el token del usuario autenticado)
+   ══════════════════════════════════════════════════════════════ */
+const sb = {
+  get baseHeaders() { return authHeaders(); },
+  url: (tabla, params = "") => `${SUPABASE_URL}/rest/v1/${tabla}${params}`
 };
+
+async function sbGet(tabla) {
+  const r = await fetch(sb.url(tabla, "?select=*"), { headers: sb.baseHeaders });
+  return r.ok ? r.json() : [];
+}
+async function sbInsert(tabla, data) {
+  const r = await fetch(sb.url(tabla), {
+    method: "POST",
+    headers: { ...sb.baseHeaders, "Prefer": "return=representation" },
+    body: JSON.stringify(data)
+  });
+  if (!r.ok) {
+    const err = await r.text();
+    console.error("sbInsert error:", err);
+    return null;
+  }
+  return r.json();
+}
+async function sbUpdate(tabla, id, data) {
+  const r = await fetch(sb.url(tabla, `?id=eq.${id}`), {
+    method: "PATCH", headers: sb.baseHeaders, body: JSON.stringify(data)
+  });
+  return r.ok;
+}
+async function sbDelete(tabla, id) {
+  const r = await fetch(sb.url(tabla, `?id=eq.${id}`), {
+    method: "DELETE", headers: sb.baseHeaders
+  });
+  return r.ok;
+}
+
+/* ── ESTADO GLOBAL ── */
+let movimientos = [];
+let inversiones = [];
+let deudas      = [];
+
+/* ── CARGA INICIAL DESDE SUPABASE ── */
+async function cargarDatos() {
+  mostrarCargando(true);
+  try {
+    const [movDB, invDB, deuDB, pagDB, cargDB] = await Promise.all([
+      sbGet("movimientos"),
+      sbGet("inversiones"),
+      sbGet("deudas"),
+      sbGet("pagos_deuda"),
+      sbGet("cargos_tarjeta")
+    ]);
+
+    // Mapear nombres de columnas DB → app
+    movimientos = (movDB || []).map(m => ({
+      id:          m.id,
+      descripcion: m.descripcion,
+      desc:        m.descripcion,
+      valor:       parseFloat(m.valor),
+      tipo:        m.tipo,
+      fecha:       m.fecha,
+      categoria:   m.categoria || "",
+      subcategoria:m.subcategoria || "",
+      metodoPago:  m.metodo_pago || "",
+      esCredito:   m.es_credito || false,
+      deudaId:     m.deuda_id || null,
+      cargoId:     m.cargo_id || null,
+    }));
+
+    inversiones = (invDB || []).map(i => ({
+      id:               i.id,
+      tipo:             i.tipo,
+      nombre:           i.nombre,
+      broker:           i.broker || "",
+      origen:           i.origen,
+      cantidad:         parseFloat(i.cantidad || 0),
+      precioCompra:     parseFloat(i.precio_compra || 0),
+      precioActual:     parseFloat(i.precio_actual || 0),
+      capital:          parseFloat(i.capital || 0),
+      tasaEA:           parseFloat(i.tasa_ea || 0),
+      fechaInicio:      i.fecha_inicio || "",
+      fechaVencimiento: i.fecha_vencimiento || "",
+      valorCompra:      parseFloat(i.valor_compra || 0),
+      valorActual:      parseFloat(i.valor_actual || 0),
+    }));
+
+    // Armar deudas con sus pagos y cargos embebidos
+    deudas = (deuDB || []).map(d => {
+      const pagos = (pagDB || [])
+        .filter(p => p.deuda_id === d.id)
+        .map(p => ({
+          id:            p.id,
+          fecha:         p.fecha,
+          cuota:         parseFloat(p.cuota),
+          capitalPagado: parseFloat(p.capital_pagado || 0),
+          interes:       parseFloat(p.interes || 0),
+          tasaAplicada:  parseFloat(p.tasa_aplicada || 0),
+        }));
+      const _cargos = (cargDB || [])
+        .filter(c => c.deuda_id === d.id)
+        .map(c => ({
+          id:     c.id,
+          fecha:  c.fecha,
+          desc:   c.descripcion,
+          valor:  parseFloat(c.valor),
+          pagado: c.pagado || false,
+          movId:  c.movimiento_id || null,
+        }));
+      return {
+        id:            d.id,
+        nombre:        d.nombre,
+        tipo:          d.tipo,
+        capital:       parseFloat(d.capital),
+        fecha:         d.fecha,
+        tipoTasa:      d.tipo_tasa,
+        tasaFija:      parseFloat(d.tasa_fija || 0),
+        frecuencia:    d.frecuencia || "",
+        cuotas:        d.cuotas || 0,
+        _esTarjetaAuto:d.es_tarjeta_auto || false,
+        pagos,
+        _cargos,
+      };
+    });
+  } catch(e) {
+    console.error("Error cargando datos:", e);
+  }
+  mostrarCargando(false);
+  actualizar();
+}
+
+function mostrarCargando(visible) {
+  let el = document.getElementById("loadingOverlay");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "loadingOverlay";
+    el.style.cssText = "position:fixed;inset:0;background:rgba(15,23,42,.85);z-index:9999;display:flex;align-items:center;justify-content:center;font-size:16px;color:#60a5fa;font-weight:700";
+    el.innerHTML = "⏳ Cargando datos...";
+    document.body.appendChild(el);
+  }
+  el.style.display = visible ? "flex" : "none";
+}
+
+/* ── SAVE reemplazado: ya no usa localStorage ── */
+/* Las funciones de guardado ahora llaman a Supabase directamente */
+const save = () => {}; // vacío — se guarda en cada operación
 
 /* ── HELPERS ── */
 const fmt  = n => "$" + Math.round(n < 0 ? 0 : n).toLocaleString("es-CO");
@@ -199,71 +523,6 @@ function actualizarTipoMovimiento() {
     const opciones = tipo === "ingreso" ? sinCredito : conCredito;
     metSel.innerHTML = opciones.map(o=>`<option>${o}</option>`).join("");
   }
-}
-
-function agregarMovimiento() {
-  const desc  = document.getElementById("descripcion").value.trim();
-  const valor = Number(document.getElementById("valor").value);
-  const tipo  = document.getElementById("tipo").value;
-  const fecha = document.getElementById("fecha").value || hoy();
-  const cat   = document.getElementById("categoria").value;
-  const sub   = document.getElementById("subcategoria").value;
-  const meto  = document.getElementById("metodoPago").value;
-
-  if (!desc || valor <= 0) { alert("Completa descripción y valor."); return; }
-
-  // Si es pago de deuda manual, vincular la deuda
-  let deudaId = null;
-  if (tipo === "pago_deuda_cuota") {
-    deudaId = document.getElementById("selDeudaVinculo").value || null;
-    if (deudaId) {
-      // Registrar el pago en la deuda vinculada (sin interés detallado en este flujo rápido)
-      const d = deudas.find(d => String(d.id) === String(deudaId));
-      if (d) {
-        d.pagos.push({ fecha, cuota: valor, capitalPagado: valor, interes: 0, tasaAplicada: 0 });
-      }
-    }
-  }
-
-  // Si es un gasto pagado con tarjeta de crédito → crear deuda pendiente automática
-  const metodosCred = ["Banco Bogotá Crédito", "Davivienda Crédito"];
-  if (tipo === "gasto" && metodosCred.includes(meto)) {
-    // Buscar si ya existe una deuda-tarjeta para este método; si no, crearla
-    let deudaTarjeta = deudas.find(d =>
-      d.tipo === "tarjeta_credito" && d.nombre === meto && d._esTarjetaAuto
-    );
-    if (!deudaTarjeta) {
-      deudaTarjeta = {
-        id: uid(), nombre: meto, tipo: "tarjeta_credito",
-        capital: 0, fecha: hoy(), tipoTasa: "sin_tasa",
-        tasaFija: 0, frecuencia: "mensual", cuotas: 0,
-        pagos: [], _esTarjetaAuto: true,
-        _cargos: []   // historial de cargos pendientes
-      };
-      deudas.push(deudaTarjeta);
-    }
-    // Agregar cargo pendiente
-    const cargoId = uid();
-    if (!deudaTarjeta._cargos) deudaTarjeta._cargos = [];
-    deudaTarjeta._cargos.push({ id: cargoId, fecha, desc, valor, pagado: false, movId: null });
-    // Recalcular capital de la deuda como suma de cargos pendientes
-    deudaTarjeta.capital = deudaTarjeta._cargos.filter(c => !c.pagado).reduce((s, c) => s + c.valor, 0);
-    // El gasto en tarjeta NO sale de caja → se marca como esCredito
-    movimientos.push({ id: uid(), desc, descripcion: desc, valor, tipo: "gasto", fecha,
-      categoria: cat, subcategoria: sub, metodoPago: meto, deudaId: null,
-      esCredito: true, cargoId });
-    save(); actualizar();
-    document.getElementById("descripcion").value = "";
-    document.getElementById("valor").value = "";
-    return; // salir antes del push normal
-  }
-
-  movimientos.push({ id: uid(), desc, descripcion: desc, valor, tipo, fecha, categoria: cat, subcategoria: sub, metodoPago: meto, deudaId });
-  save();
-  actualizar();
-
-  document.getElementById("descripcion").value = "";
-  document.getElementById("valor").value = "";
 }
 
 /* ── Semana → key y label ── */
@@ -441,17 +700,146 @@ function actualizarFormInversion() {
   }
 }
 
-function agregarInversion() {
+
+/* ════════════════════════════════
+   MOVIMIENTOS — CRUD Supabase
+   ════════════════════════════════ */
+async function agregarMovimiento() {
+  const desc  = document.getElementById("descripcion").value.trim();
+  const valor = Number(document.getElementById("valor").value);
+  const tipo  = document.getElementById("tipo").value;
+  const fecha = document.getElementById("fecha").value || hoy();
+  const cat   = document.getElementById("categoria").value;
+  const sub   = document.getElementById("subcategoria").value;
+  const meto  = document.getElementById("metodoPago").value;
+
+  if (!desc || valor <= 0) { alert("Completa descripción y valor."); return; }
+
+  // Si es pago de deuda manual, vincular la deuda
+  let deudaId = null;
+  if (tipo === "pago_deuda_cuota") {
+    deudaId = document.getElementById("selDeudaVinculo").value || null;
+    if (deudaId) {
+      const d = deudas.find(d => String(d.id) === String(deudaId));
+      if (d) {
+        const pago = { fecha, cuota: valor, capitalPagado: valor, interes: 0, tasaAplicada: 0 };
+        const res = await sbInsert("pagos_deuda", {
+          user_id: _currentUser.id, deuda_id: deudaId, fecha, cuota: valor,
+          capital_pagado: valor, interes: 0, tasa_aplicada: 0
+        });
+        if (res && res[0]) {
+          pago.id = res[0].id;
+          d.pagos.push(pago);
+        }
+      }
+    }
+  }
+
+  // Gasto con tarjeta de crédito
+  const metodosCred = ["Banco Bogotá Crédito", "Davivienda Crédito"];
+  if (tipo === "gasto" && metodosCred.includes(meto)) {
+    let deudaTarjeta = deudas.find(d => d.tipo === "tarjeta_credito" && d.nombre === meto && d._esTarjetaAuto);
+    if (!deudaTarjeta) {
+      const dRes = await sbInsert("deudas", {
+        user_id: _currentUser.id, nombre: meto, tipo: "tarjeta_credito", capital: 0,
+        fecha: hoy(), tipo_tasa: "sin_tasa", tasa_fija: 0,
+        frecuencia: "mensual", cuotas: 0, es_tarjeta_auto: true
+      });
+      if (dRes && dRes[0]) {
+        deudaTarjeta = { id: dRes[0].id, nombre: meto, tipo: "tarjeta_credito", capital: 0, fecha: hoy(), tipoTasa: "sin_tasa", tasaFija: 0, frecuencia: "mensual", cuotas: 0, pagos: [], _esTarjetaAuto: true, _cargos: [] };
+        deudas.push(deudaTarjeta);
+      }
+    }
+
+    // Insertar movimiento con esCredito=true
+    const movRes = await sbInsert("movimientos", {
+      user_id: _currentUser.id, descripcion: desc, valor, tipo: "gasto", fecha,
+      categoria: cat, subcategoria: sub, metodo_pago: meto,
+      es_credito: true, deuda_id: null
+    });
+    const movId = movRes && movRes[0] ? movRes[0].id : null;
+
+    // Insertar cargo de tarjeta
+    if (deudaTarjeta && movId) {
+      const cargoRes = await sbInsert("cargos_tarjeta", {
+        user_id: _currentUser.id, deuda_id: deudaTarjeta.id, movimiento_id: movId,
+        fecha, descripcion: desc, valor, pagado: false
+      });
+      const cargoId = cargoRes && cargoRes[0] ? cargoRes[0].id : null;
+      if (!deudaTarjeta._cargos) deudaTarjeta._cargos = [];
+      deudaTarjeta._cargos.push({ id: cargoId, fecha, desc, valor, pagado: false, movId });
+      deudaTarjeta.capital = deudaTarjeta._cargos.filter(c => !c.pagado).reduce((s,c) => s + c.valor, 0);
+      await sbUpdate("deudas", deudaTarjeta.id, { capital: deudaTarjeta.capital });
+
+      // Actualizar movimiento con cargo_id
+      if (cargoId) await sbUpdate("movimientos", movId, { cargo_id: cargoId });
+    }
+
+    if (movRes && movRes[0]) {
+      movimientos.push({ id: movRes[0].id, desc, descripcion: desc, valor, tipo: "gasto", fecha, categoria: cat, subcategoria: sub, metodoPago: meto, esCredito: true, deudaId: null });
+    }
+
+    document.getElementById("descripcion").value = "";
+    document.getElementById("valor").value = "";
+    actualizar();
+    return;
+  }
+
+  // Movimiento normal
+  const res = await sbInsert("movimientos", {
+    user_id: _currentUser.id, descripcion: desc, valor, tipo, fecha,
+    categoria: cat, subcategoria: sub,
+    metodo_pago: meto, es_credito: false, deuda_id: deudaId
+  });
+  if (res && res[0]) {
+    movimientos.push({ id: res[0].id, desc, descripcion: desc, valor, tipo, fecha, categoria: cat, subcategoria: sub, metodoPago: meto, esCredito: false, deudaId });
+  }
+
+  document.getElementById("descripcion").value = "";
+  document.getElementById("valor").value = "";
+  actualizar();
+}
+
+async function eliminarMovimiento(id) {
+  await sbDelete("movimientos", id);
+  movimientos = movimientos.filter(m => String(m.id) !== String(id));
+  actualizar();
+}
+
+async function guardarEdicion() {
+  const id = document.getElementById("editId").value;
+  const m  = movimientos.find(m => String(m.id) === String(id));
+  if (!m) return;
+  m.descripcion = document.getElementById("editDesc").value.trim();
+  m.desc        = m.descripcion;
+  m.valor       = Number(document.getElementById("editValor").value);
+  m.tipo        = document.getElementById("editTipoMov").value;
+  m.categoria   = document.getElementById("editCategoria").value;
+  m.metodoPago  = document.getElementById("editMetodo").value;
+  m.fecha       = document.getElementById("editFecha").value;
+
+  await sbUpdate("movimientos", id, {
+    descripcion: m.descripcion, valor: m.valor, tipo: m.tipo,
+    categoria: m.categoria, metodo_pago: m.metodoPago, fecha: m.fecha
+  });
+  actualizar();
+  cerrarModalEditar();
+}
+
+/* ════════════════════════════════
+   INVERSIONES — CRUD Supabase
+   ════════════════════════════════ */
+async function agregarInversion() {
   const tipo   = document.getElementById("tipoActivo").value;
   const nombre = document.getElementById("invNombre").value.trim();
   if (!nombre) { alert("Escribe el nombre del activo."); return; }
 
-  const g = id => { const e=document.getElementById(id); return e?Number(e.value)||0:0; };
-  const gs= id => { const e=document.getElementById(id); return e?e.value:""; };
+  const g  = id => { const e=document.getElementById(id); return e?Number(e.value)||0:0; };
+  const gs = id => { const e=document.getElementById(id); return e?e.value:""; };
   const origen = document.getElementById("invOrigen").value;
 
   const inv = {
-    id: uid(), tipo, nombre, origen,
+    tipo, nombre, origen,
     broker:           gs("invBroker"),
     cantidad:         g("invCantidad"),
     precioCompra:     g("invPrecioCompra"),
@@ -464,23 +852,35 @@ function agregarInversion() {
     valorActual:      g("invValorActual"),
   };
 
+  const res = await sbInsert("inversiones", {
+    user_id: _currentUser.id, tipo: inv.tipo, nombre: inv.nombre, broker: inv.broker || null, origen: inv.origen,
+    cantidad: inv.cantidad || null, precio_compra: inv.precioCompra || null,
+    precio_actual: inv.precioActual || null, capital: inv.capital || null,
+    tasa_ea: inv.tasaEA || null, fecha_inicio: inv.fechaInicio || null,
+    fecha_vencimiento: inv.fechaVencimiento || null,
+    valor_compra: inv.valorCompra || null, valor_actual: inv.valorActual || null
+  });
+  if (res && res[0]) inv.id = res[0].id;
+
   // Si viene de caja → registrar traslado
   if (origen === "caja") {
     const monto = capitalInvertido(inv);
     if (monto > 0) {
-      movimientos.push({
-        id: uid(), descripcion: `Inversión: ${nombre}`, desc: `Inversión: ${nombre}`,
-        valor: monto, tipo: "traslado_inversion",
-        fecha: inv.fechaInicio, categoria: "Inversión", subcategoria: tipo,
-        metodoPago: "Transferencia", deudaId: null
+      const mRes = await sbInsert("movimientos", {
+        user_id: _currentUser.id, descripcion: `Inversión: ${nombre}`, valor: monto,
+        tipo: "traslado_inversion", fecha: inv.fechaInicio,
+        categoria: "Inversión", subcategoria: tipo,
+        metodo_pago: "Transferencia", es_credito: false
       });
+      if (mRes && mRes[0]) {
+        movimientos.push({ id: mRes[0].id, descripcion: `Inversión: ${nombre}`, desc: `Inversión: ${nombre}`, valor: monto, tipo: "traslado_inversion", fecha: inv.fechaInicio, categoria: "Inversión", subcategoria: tipo, metodoPago: "Transferencia", esCredito: false, deudaId: null });
+      }
     }
   }
 
   inversiones.push(inv);
-  save(); actualizar();
+  actualizar();
 
-  // Limpiar
   document.getElementById("invNombre").value = "";
   const invBrokerEl = document.getElementById("invBroker");
   if (invBrokerEl) invBrokerEl.value = "";
@@ -490,24 +890,119 @@ function agregarInversion() {
   });
 }
 
-function editarPrecioInversion(id) {
+async function editarPrecioInversion(id) {
   const inv = inversiones.find(i => String(i.id) === String(id));
   if (!inv) return;
   const tipo = inv.tipo;
-  let campo, lbl;
-  if (["Acción","ETF","Criptomoneda"].includes(tipo)) { campo="precioActual"; lbl="Precio actual"; }
-  else if (["CDT","Fondo"].includes(tipo))             { campo="tasaEA";      lbl="Tasa EA %"; }
-  else if (tipo==="Finca Raíz")                        { campo="valorActual"; lbl="Valor actual"; }
-  else                                                 { campo="capital";     lbl="Capital"; }
+  let campo, campoDb, lbl;
+  if (["Acción","ETF","Criptomoneda"].includes(tipo)) { campo="precioActual"; campoDb="precio_actual"; lbl="Precio actual"; }
+  else if (["CDT","Fondo"].includes(tipo))             { campo="tasaEA";      campoDb="tasa_ea";      lbl="Tasa EA %"; }
+  else if (tipo==="Finca Raíz")                        { campo="valorActual"; campoDb="valor_actual"; lbl="Valor actual"; }
+  else                                                 { campo="capital";     campoDb="capital";      lbl="Capital"; }
   const v = prompt(`${lbl}:`, inv[campo]);
   if (v===null) return;
   inv[campo] = Number(v);
-  save(); actualizar();
+  await sbUpdate("inversiones", id, { [campoDb]: Number(v) });
+  actualizar();
 }
 
-function eliminarInversion(id) {
+async function eliminarInversion(id) {
+  await sbDelete("inversiones", id);
   inversiones = inversiones.filter(i => String(i.id) !== String(id));
-  save(); actualizar();
+  actualizar();
+}
+
+/* ════════════════════════════════
+   DEUDAS — CRUD Supabase
+   ════════════════════════════════ */
+async function agregarDeuda() {
+  const nombre   = document.getElementById("dNombre").value.trim();
+  const tipo     = document.getElementById("dTipo").value;
+  const capital  = Number(document.getElementById("dCapital").value);
+  const fecha    = document.getElementById("dFecha").value || hoy();
+  const tipoTasa = document.getElementById("dTipoTasa").value;
+  const tasaFija = Number(document.getElementById("dTasaFija").value) || 0;
+  const frecuencia= document.getElementById("dFrecuencia").value;
+  const cuotas   = Number(document.getElementById("dCuotas").value) || 0;
+
+  if (!nombre || capital<=0) { alert("Nombre y capital son requeridos."); return; }
+
+  const res = await sbInsert("deudas", {
+    user_id: _currentUser.id, nombre, tipo, capital, fecha,
+    tipo_tasa: tipoTasa, tasa_fija: tasaFija,
+    frecuencia, cuotas, es_tarjeta_auto: false
+  });
+  if (res && res[0]) {
+    deudas.push({ id: res[0].id, nombre, tipo, capital, fecha, tipoTasa, tasaFija, frecuencia, cuotas, pagos: [], _esTarjetaAuto: false, _cargos: [] });
+  }
+
+  cerrarModalDeuda();
+  actualizar();
+  ["dNombre","dCapital","dTasaFija","dCuotas"].forEach(id => { const e=document.getElementById(id); if(e) e.value=""; });
+}
+
+async function eliminarDeuda(id) {
+  if (!confirm("¿Eliminar esta deuda?")) return;
+  await sbDelete("deudas", id);
+  deudas = deudas.filter(d => String(d.id)!==String(id));
+  actualizar();
+}
+
+async function registrarPagoDeuda() {
+  const id  = document.getElementById("pagoDeudaId").value;
+  const d   = deudas.find(d => String(d.id)===String(id));
+  if (!d) return;
+  const fecha      = document.getElementById("pagoFecha").value || hoy();
+  const cuota      = Number(document.getElementById("pagoCuota").value);
+  const capPagado  = Number(document.getElementById("pagoCapital").value) || 0;
+  const tasaVar    = Number(document.getElementById("pagoTasaVar").value) || 0;
+  if (!fecha || cuota<=0) { alert("Fecha y valor del pago son requeridos."); return; }
+
+  const interes = Math.max(0, cuota-capPagado);
+  const tasaAplicada = d.tipoTasa==="variable" ? tasaVar : d.tasaFija;
+
+  // Guardar pago en DB
+  const pRes = await sbInsert("pagos_deuda", {
+    user_id: _currentUser.id, deuda_id: id, fecha, cuota,
+    capital_pagado: capPagado, interes, tasa_aplicada: tasaAplicada
+  });
+  const pago = { fecha, cuota, capitalPagado: capPagado, interes, tasaAplicada };
+  if (pRes && pRes[0]) pago.id = pRes[0].id;
+  d.pagos.push(pago);
+
+  // Si es deuda de tarjeta auto, marcar cargos como pagados
+  if (d._esTarjetaAuto && d._cargos) {
+    let restante = capPagado > 0 ? capPagado : cuota;
+    const pendientes = d._cargos.filter(c => !c.pagado).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
+    for (const c of pendientes) {
+      if (restante <= 0) break;
+      if (restante >= c.valor) {
+        c.pagado = true;
+        restante -= c.valor;
+        if (c.id) await sbUpdate("cargos_tarjeta", c.id, { pagado: true });
+      } else {
+        c.valor -= restante;
+        restante = 0;
+        if (c.id) await sbUpdate("cargos_tarjeta", c.id, { valor: c.valor });
+      }
+    }
+    d.capital = d._cargos.filter(c => !c.pagado).reduce((s,c)=>s+c.valor,0);
+    await sbUpdate("deudas", id, { capital: d.capital });
+  }
+
+  // Crear movimiento de pago que sale de caja
+  const mRes = await sbInsert("movimientos", {
+    user_id: _currentUser.id, descripcion: `Pago deuda: ${d.nombre}`, valor: cuota,
+    tipo: "pago_deuda_cuota", fecha,
+    categoria: "Deudas", subcategoria: d.nombre,
+    metodo_pago: "Débito", es_credito: false, deuda_id: id
+  });
+  if (mRes && mRes[0]) {
+    movimientos.push({ id: mRes[0].id, descripcion:`Pago deuda: ${d.nombre}`, desc:`Pago deuda: ${d.nombre}`, valor: cuota, tipo:"pago_deuda_cuota", fecha, categoria:"Deudas", subcategoria:d.nombre, metodoPago:"Débito", esCredito:false, deudaId: id });
+  }
+
+  cerrarPagoDeuda();
+  actualizar();
 }
 
 function actualizarInversiones() {
@@ -574,10 +1069,6 @@ function actualizarInversiones() {
   });
   cont.innerHTML = html;
 }
-
-/* ════════════════════════════════
-   DEUDAS — Sistema completo
-   ════════════════════════════════ */
 function abrirModalDeuda() {
   document.getElementById("modalDeuda").style.display = "flex";
   actualizarVisibilidadTasa();
@@ -590,94 +1081,6 @@ function actualizarVisibilidadTasa() {
   document.getElementById("filaFrecuencia").style.display= tipo!=="sin_tasa" ? "block":"none";
   document.getElementById("filaCuotas").style.display    = tipo!=="sin_tasa" ? "block":"none";
 }
-
-function agregarDeuda() {
-  const nombre   = document.getElementById("dNombre").value.trim();
-  const tipo     = document.getElementById("dTipo").value;
-  const capital  = Number(document.getElementById("dCapital").value);
-  const fecha    = document.getElementById("dFecha").value || hoy();
-  const tipoTasa = document.getElementById("dTipoTasa").value;
-  const tasaFija = Number(document.getElementById("dTasaFija").value) || 0;
-  const frecuencia= document.getElementById("dFrecuencia").value;
-  const cuotas   = Number(document.getElementById("dCuotas").value) || 0;
-
-  if (!nombre || capital<=0) { alert("Nombre y capital son requeridos."); return; }
-
-  deudas.push({ id:uid(), nombre, tipo, capital, fecha, tipoTasa, tasaFija, frecuencia, cuotas, pagos:[] });
-  save(); cerrarModalDeuda(); actualizar();
-
-  // Limpiar
-  ["dNombre","dCapital","dTasaFija","dCuotas"].forEach(id => { const e=document.getElementById(id); if(e) e.value=""; });
-}
-
-function eliminarDeuda(id) {
-  if (!confirm("¿Eliminar esta deuda?")) return;
-  deudas = deudas.filter(d => String(d.id)!==String(id));
-  save(); actualizar();
-}
-
-function abrirPagoDeuda(id) {
-  const d = deudas.find(d => String(d.id)===String(id));
-  if (!d) return;
-  document.getElementById("pagoDeudaId").value = String(id);
-  document.getElementById("tituloPago").textContent = `Registrar pago — ${d.nombre}`;
-
-  // Si tasa fija + cuotas, precalcular cuota sugerida
-  const sv = saldoVivo(d);
-  const cuotasRest = d.cuotas - d.pagos.length;
-  if (d.tipoTasa==="fija" && d.tasaFija>0 && cuotasRest>0) {
-    const tm = d.tasaFija/100;
-    const cuotaCalc = sv*tm*Math.pow(1+tm,cuotasRest)/(Math.pow(1+tm,cuotasRest)-1);
-    const interesCalc = sv*tm;
-    document.getElementById("pagoCuota").value    = Math.round(cuotaCalc);
-    document.getElementById("pagoCapital").value  = Math.round(cuotaCalc-interesCalc);
-  } else {
-    document.getElementById("pagoCuota").value   = "";
-    document.getElementById("pagoCapital").value = "";
-  }
-  document.getElementById("pagoFecha").value = hoy();
-  document.getElementById("pagoTasaVar").value = "";
-  document.getElementById("filaPagoTasaVar").style.display = d.tipoTasa==="variable"?"block":"none";
-  document.getElementById("modalPagoDeuda").style.display = "flex";
-}
-function cerrarPagoDeuda() { document.getElementById("modalPagoDeuda").style.display = "none"; }
-
-function registrarPagoDeuda() {
-  const id  = document.getElementById("pagoDeudaId").value;
-  const d   = deudas.find(d => String(d.id)===String(id));
-  if (!d) return;
-  const fecha      = document.getElementById("pagoFecha").value || hoy();
-  const cuota      = Number(document.getElementById("pagoCuota").value);
-  const capPagado  = Number(document.getElementById("pagoCapital").value) || 0;
-  const tasaVar    = Number(document.getElementById("pagoTasaVar").value) || 0;
-  if (!fecha || cuota<=0) { alert("Fecha y valor del pago son requeridos."); return; }
-
-  const interes = Math.max(0, cuota-capPagado);
-  d.pagos.push({ fecha, cuota, capitalPagado: capPagado, interes, tasaAplicada: d.tipoTasa==="variable"?tasaVar:d.tasaFija });
-
-  // Si es deuda de tarjeta auto, marcar cargos como pagados (de más antiguo a más nuevo)
-  if (d._esTarjetaAuto && d._cargos) {
-    let restante = capPagado > 0 ? capPagado : cuota;
-    d._cargos.filter(c => !c.pagado).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha)).forEach(c => {
-      if (restante <= 0) return;
-      if (restante >= c.valor) { c.pagado = true; restante -= c.valor; }
-      else { c.valor -= restante; restante = 0; }
-    });
-    // Recalcular capital pendiente
-    d.capital = d._cargos.filter(c => !c.pagado).reduce((s,c)=>s+c.valor,0);
-  }
-
-  // → El pago SÍ sale de caja
-  movimientos.push({
-    id: uid(), descripcion:`Pago deuda: ${d.nombre}`, desc:`Pago deuda: ${d.nombre}`,
-    valor: cuota, tipo:"pago_deuda_cuota",
-    fecha, categoria:"Deudas", subcategoria:d.nombre,
-    metodoPago:"Débito", deudaId: d.id
-  });
-
-  save(); cerrarPagoDeuda(); actualizar();
-}
-
 function dibujarDeudas() {
   const cont = document.getElementById("listaDeudas");
   if (!cont) return;
@@ -753,7 +1156,6 @@ function toggleTabla(id) {
   const el = document.getElementById(id);
   if (el) el.style.display = el.style.display==="none"?"block":"none";
 }
-
 /* ════════════════════════════════
    ESTADÍSTICAS con selector de mes
    ════════════════════════════════ */
@@ -1407,8 +1809,17 @@ function exportarExcel() {
 })();
 
 
-actualizar();
-if (document.getElementById("tablaInversiones")) actualizarInversiones();
-if (document.getElementById("listaDeudas"))      dibujarDeudas();
+
 // Inicializar formulario de movimientos
 if (document.getElementById("tipo")) actualizarTipoMovimiento();
+
+/* ── INICIO: verificar sesión, luego cargar ── */
+(async () => {
+  const sesionActiva = await restaurarSesion();
+  if (sesionActiva) {
+    mostrarApp();
+    cargarDatos();
+  } else {
+    mostrarPantallaAuth();
+  }
+})();
