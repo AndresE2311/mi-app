@@ -171,6 +171,34 @@ function actualizarTipoMovimiento() {
   const tipo = document.getElementById("tipo").value;
   document.getElementById("filaDeudaVinculo").style.display =
     tipo === "pago_deuda_cuota" ? "block" : "none";
+
+  // Mostrar/ocultar categoría y subcategoría
+  const filaCS = document.getElementById("filaCategoriaSubcat");
+  if (filaCS) filaCS.style.display = tipo === "pago_deuda_cuota" ? "none" : "block";
+
+  // Llenar categorías según tipo
+  const catSel = document.getElementById("categoria");
+  if (catSel) {
+    catSel.innerHTML = '<option value="">Categoría</option>';
+    if (tipo === "ingreso") {
+      catSel.innerHTML += '<option value="Entradas">Entradas</option>';
+      catSel.value = "Entradas";
+      cargarSubcategorias();
+    } else if (tipo === "gasto") {
+      ["Mercado","Restaurante","Transporte","Vivienda","Ocio","Salud","Educación","Emergencia","Servicios","Otros"]
+        .forEach(c => catSel.innerHTML += `<option value="${c}">${c}</option>`);
+      cargarSubcategorias();
+    }
+  }
+
+  // Métodos de pago según tipo
+  const metSel = document.getElementById("metodoPago");
+  if (metSel) {
+    const sinCredito = ["Efectivo","Débito","Nequi","Daviplata","Transferencia","ARQ"];
+    const conCredito = [...sinCredito,"Banco Bogotá Crédito","Davivienda Crédito"];
+    const opciones = tipo === "ingreso" ? sinCredito : conCredito;
+    metSel.innerHTML = opciones.map(o=>`<option>${o}</option>`).join("");
+  }
 }
 
 function agregarMovimiento() {
@@ -424,6 +452,7 @@ function agregarInversion() {
 
   const inv = {
     id: uid(), tipo, nombre, origen,
+    broker:           gs("invBroker"),
     cantidad:         g("invCantidad"),
     precioCompra:     g("invPrecioCompra"),
     precioActual:     g("invPrecioActual"),
@@ -453,6 +482,8 @@ function agregarInversion() {
 
   // Limpiar
   document.getElementById("invNombre").value = "";
+  const invBrokerEl = document.getElementById("invBroker");
+  if (invBrokerEl) invBrokerEl.value = "";
   ["invCantidad","invPrecioCompra","invPrecioActual","invCapital","invTasaEA",
    "invFechaVcto","invValorCompra","invValorActual"].forEach(id => {
     const e=document.getElementById(id); if(e) e.value="";
@@ -515,7 +546,9 @@ function actualizarInversiones() {
 
       return `<tr>
         <td><b style="font-size:13px">${inv.nombre}</b><br><span style="font-size:11px;color:#94a3b8">${detalle}</span>
-            <br><span style="font-size:11px;color:${inv.origen==="caja"?"#06b6d4":"#94a3b8"}">${inv.origen==="caja"?"Desde caja":"Capital externo"}</span></td>
+            <br><span style="font-size:11px;color:${inv.origen==="caja"?"#06b6d4":"#94a3b8"}">${inv.origen==="caja"?"Desde caja":"Capital externo"}</span>
+            ${inv.broker?`<br><span style="font-size:11px;color:#a78bfa">🏦 ${inv.broker}</span>`:""}
+        </td>
         <td>${fmt(ci)}</td>
         <td>${fmt(va)}</td>
         <td style="color:${gan>=0?"#22c55e":"#ef4444"}">${gan>=0?"+":""}${fmtN(gan)}<br><span style="font-size:11px">${pct!=="—"?pct+"%":"—"}</span></td>
@@ -838,13 +871,27 @@ function renderEstadisticas() {
     }))
   },{scales:{x:{stacked:true,ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}},y:{stacked:true,ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}}}});
 
-  /* ─ 6. Métodos de pago ─ */
+  /* ─ 6. Métodos de pago (siempre mensual) ─ */
+  const mesMetodos = mesFiltro || new Date().toISOString().substring(0,7);
+  const movMetMes = movimientos.filter(m=>m.fecha.startsWith(mesMetodos));
   const metMap={};
-  movF.forEach(m=>{ if(m.tipo==="gasto") metMap[m.metodoPago]=(metMap[m.metodoPago]||0)+m.valor; });
+  movMetMes.forEach(m=>{ if(m.tipo==="gasto") metMap[m.metodoPago]=(metMap[m.metodoPago]||0)+m.valor; });
+  const metLbl = mesFiltro ? "" : ` (${new Date(mesMetodos+"-01").toLocaleDateString("es-CO",{month:"short",year:"2-digit"})})`;
   dibujarChart("graficaMetodos","bar",{
     labels:Object.keys(metMap),
-    datasets:[{label:"Gastos",data:Object.values(metMap),backgroundColor:"#3b82f6",borderRadius:8}]
+    datasets:[{label:"Gastos"+metLbl,data:Object.values(metMap),backgroundColor:"#3b82f6",borderRadius:8}]
   },{scales:{x:{ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}},y:{ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}}}});
+
+  /* ─ 6b. Métodos de pago — acumulado todos los meses (barras por mes apiladas) ─ */
+  const metodosTodos=[...new Set(movimientos.filter(m=>m.tipo==="gasto").map(m=>m.metodoPago))];
+  dibujarChart("graficaMetodosAcum","bar",{
+    labels:labMeses,
+    datasets:metodosTodos.map((met,i)=>({
+      label:met,
+      data:mesesAll.map(mes=>movimientos.filter(m=>m.fecha.startsWith(mes)&&m.tipo==="gasto"&&m.metodoPago===met).reduce((s,m)=>s+m.valor,0)),
+      backgroundColor:colores[i%colores.length],borderRadius:4
+    }))
+  },{scales:{x:{stacked:true,ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}},y:{stacked:true,ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}}}});
 
   /* ─ 7. Inversiones ─ */
   const invMap={};
@@ -854,9 +901,24 @@ function renderEstadisticas() {
     datasets:[{data:Object.values(invMap),backgroundColor:colores}]
   });
 
-  /* ─ 8. Fuentes de ingresos (subcategoría/descripción) ─ */
+  /* ─ 7b. Concentración de riesgo por bróker ─ */
+  const brokerMap={};
+  inversiones.forEach(inv=>{
+    const lbl = inv.broker && inv.broker!=="—" && inv.broker!=="" ? inv.broker : "Sin bróker";
+    brokerMap[lbl] = (brokerMap[lbl]||0) + valorActualInversion(inv);
+  });
+  if(Object.keys(brokerMap).length){
+    dibujarChart("graficaRiesgoBroker","bar",{
+      labels:Object.keys(brokerMap),
+      datasets:[{label:"Valor ($)",data:Object.values(brokerMap),backgroundColor:colores.map((c,i)=>colores[i%colores.length]),borderRadius:8}]
+    },{indexAxis:"y",scales:{x:{ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}},y:{ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}}}});
+  }
+
+  /* ─ 8. Fuentes de ingresos (siempre mensual) ─ */
+  const mesFuentes = mesFiltro || new Date().toISOString().substring(0,7);
+  const movFuentesMes = movimientos.filter(m=>m.fecha.startsWith(mesFuentes));
   const fuenteMap={};
-  movF.forEach(m=>{
+  movFuentesMes.forEach(m=>{
     if(m.tipo==="ingreso"){
       const lbl = m.subcategoria && m.subcategoria !== "Subcategoría" ? m.subcategoria
                   : (m.categoria && m.categoria !== "Entradas" && m.categoria ? m.categoria : (m.descripcion||m.desc||"Otro"));
@@ -955,6 +1017,16 @@ function generarInformeMensual() {
       </div></div>`;
   }).join("");
 
+  // Datos broker risk
+  const brokerMapM={};
+  inversiones.forEach(inv=>{
+    const lbl=inv.broker&&inv.broker!=="—"&&inv.broker!==""?inv.broker:"Sin bróker";
+    brokerMapM[lbl]=(brokerMapM[lbl]||0)+valorActualInversion(inv);
+  });
+  // Métodos acumulados por mes
+  const metTodosM=[...new Set(movimientos.filter(m=>m.tipo==="gasto").map(m=>m.metodoPago))];
+  const metAcumDsM=metTodosM.map((met,i)=>({label:met,data:mesesAll.map(mes=>movimientos.filter(m=>m.fecha.startsWith(mes)&&m.tipo==="gasto"&&m.metodoPago===met).reduce((s,m)=>s+m.valor,0)),backgroundColor:["#3b82f6","#22c55e","#ef4444","#f59e0b","#8b5cf6","#06b6d4","#f97316","#ec4899"][i%8],borderRadius:4}));
+
   const html=`<!DOCTYPE html><html lang="es"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Informe ${nomMes}</title>
@@ -981,8 +1053,11 @@ table{width:100%;border-collapse:collapse;font-size:11px}th{background:#0f172a;p
 <div class="grafGrid">
   <div><p style="text-align:center;font-size:10px;color:#94a3b8;margin-bottom:5px">Ingresos vs Gastos histórico</p><canvas id="cMen"></canvas></div>
   <div><p style="text-align:center;font-size:10px;color:#94a3b8;margin-bottom:5px">Distribución de Gastos</p><canvas id="cCat"></canvas></div>
-  <div><p style="text-align:center;font-size:10px;color:#94a3b8;margin-bottom:5px">Métodos de Pago</p><canvas id="cMet"></canvas></div>
+  <div><p style="text-align:center;font-size:10px;color:#94a3b8;margin-bottom:5px">Métodos de Pago (este mes)</p><canvas id="cMet"></canvas></div>
+  <div><p style="text-align:center;font-size:10px;color:#94a3b8;margin-bottom:5px">Métodos de Pago — Acumulado</p><canvas id="cMetAcum"></canvas></div>
   <div><p style="text-align:center;font-size:10px;color:#94a3b8;margin-bottom:5px">Fuentes de Ingreso</p><canvas id="cFuentes"></canvas></div>
+  <div><p style="text-align:center;font-size:10px;color:#94a3b8;margin-bottom:5px">Portafolio Inversiones</p><canvas id="cInv"></canvas></div>
+  <div style="grid-column:1/-1"><p style="text-align:center;font-size:10px;color:#94a3b8;margin-bottom:5px">Concentración Riesgo por Bróker</p><canvas id="cBroker" style="max-height:160px"></canvas></div>
 </div></section>
 <section><h2>📊 % Gasto por Categoría</h2>${barrasCatMen}</section>
 <section><h2>💳 % por Método de Pago</h2>${barrasMetMen}</section>
@@ -995,7 +1070,10 @@ const opts={responsive:true,plugins:{legend:{labels:{color:"#e2e8f0",font:{size:
 new Chart(document.getElementById("cMen"),{type:"bar",data:{labels:${JSON.stringify(labAll)},datasets:[{label:"Ingresos",data:${JSON.stringify(ingAll)},backgroundColor:"#22c55e",borderRadius:4},{label:"Gastos",data:${JSON.stringify(gasAll)},backgroundColor:"#ef4444",borderRadius:4}]},options:{...opts,scales:{x:{ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}},y:{ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}}}}});
 new Chart(document.getElementById("cCat"),{type:"doughnut",data:{labels:${JSON.stringify(Object.keys(catMap))},datasets:[{data:${JSON.stringify(Object.values(catMap))},backgroundColor:cl}]},options:opts});
 new Chart(document.getElementById("cMet"),{type:"bar",data:{labels:${JSON.stringify(Object.keys(metMap))},datasets:[{label:"Gastos",data:${JSON.stringify(Object.values(metMap))},backgroundColor:"#3b82f6",borderRadius:4}]},options:{...opts,scales:{x:{ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}},y:{ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}}}}});
+new Chart(document.getElementById("cMetAcum"),{type:"bar",data:{labels:${JSON.stringify(labAll)},datasets:${JSON.stringify(metAcumDsM)}},options:{...opts,scales:{x:{stacked:true,ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}},y:{stacked:true,ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}}}}});
 new Chart(document.getElementById("cFuentes"),{type:"doughnut",data:{labels:${JSON.stringify(Object.keys(fuentesM))},datasets:[{data:${JSON.stringify(Object.values(fuentesM))},backgroundColor:cl}]},options:opts});
+${inversiones.length?`new Chart(document.getElementById("cInv"),{type:"doughnut",data:{labels:${JSON.stringify(inversiones.map(i=>i.nombre))},datasets:[{data:${JSON.stringify(inversiones.map(i=>valorActualInversion(i)))},backgroundColor:cl}]},options:opts});`:""}
+${Object.keys(brokerMapM).length?`new Chart(document.getElementById("cBroker"),{type:"bar",data:{labels:${JSON.stringify(Object.keys(brokerMapM))},datasets:[{label:"Valor ($)",data:${JSON.stringify(Object.values(brokerMapM))},backgroundColor:cl,borderRadius:8}]},options:{...opts,indexAxis:"y",scales:{x:{ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}},y:{ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}}}}});`:""}
 <\/script></body></html>`;
 
   const w=window.open("","_blank"); w.document.write(html); w.document.close();
@@ -1032,6 +1110,12 @@ function generarEstadoGeneral() {
     if(m.tipo==="ingreso"){const lbl=m.subcategoria&&m.subcategoria!=="Subcategoría"?m.subcategoria:(m.categoria&&m.categoria!=="Entradas"?m.categoria:(m.descripcion||m.desc||"Otro"));fuentesAll[lbl]=(fuentesAll[lbl]||0)+m.valor;}
   });
   const invMap={};inversiones.forEach(i=>{invMap[i.nombre]=valorActualInversion(i);});
+  // Broker risk
+  const brokerMapG={};
+  inversiones.forEach(inv=>{const lbl=inv.broker&&inv.broker!=="—"&&inv.broker!==""?inv.broker:"Sin bróker";brokerMapG[lbl]=(brokerMapG[lbl]||0)+valorActualInversion(inv);});
+  // Métodos acumulados por mes
+  const metTodosG=[...new Set(movimientos.filter(m=>m.tipo==="gasto").map(m=>m.metodoPago))];
+  const metAcumDsG=metTodosG.map((met,i)=>({label:met,data:mesesAll.map(mes=>movimientos.filter(m=>m.fecha.startsWith(mes)&&m.tipo==="gasto"&&m.metodoPago===met).reduce((s,m)=>s+m.valor,0)),backgroundColor:["#3b82f6","#22c55e","#ef4444","#f59e0b","#8b5cf6","#06b6d4","#f97316","#ec4899"][i%8],borderRadius:4}));
 
   // ── Barras horizontales categorías ──
   const gasTotal=Object.values(catMap).reduce((s,v)=>s+v,0);
@@ -1124,7 +1208,8 @@ table{width:100%;border-collapse:collapse;font-size:11px}th{background:#0f172a;p
   <div><p style="font-size:10px;color:#94a3b8;text-align:center;margin-bottom:5px">Distribución Gastos</p><canvas id="gCat"></canvas></div>
   <div><p style="font-size:10px;color:#94a3b8;text-align:center;margin-bottom:5px">Fuentes de Ingreso</p><canvas id="gFuentes"></canvas></div>
   <div><p style="font-size:10px;color:#94a3b8;text-align:center;margin-bottom:5px">Portafolio Inversiones</p><canvas id="gInv"></canvas></div>
-  <div><p style="font-size:10px;color:#94a3b8;text-align:center;margin-bottom:5px">Métodos de Pago</p><canvas id="gMet"></canvas></div>
+  <div><p style="font-size:10px;color:#94a3b8;text-align:center;margin-bottom:5px">Métodos de Pago (acum.)</p><canvas id="gMet"></canvas></div>
+  <div style="grid-column:1/-1"><p style="font-size:10px;color:#94a3b8;text-align:center;margin-bottom:5px">Concentración Riesgo por Bróker</p><canvas id="gBroker" style="max-height:160px"></canvas></div>
 </div></section>
 <section><h2>📊 % Gasto por Categoría</h2>${barrasCat}</section>
 <section><h2>💳 % por Método de Pago</h2>${barrasMet}</section>
@@ -1138,7 +1223,8 @@ new Chart(document.getElementById("gDeu"),{type:"line",data:{labels:${JSON.strin
 new Chart(document.getElementById("gCat"),{type:"doughnut",data:{labels:${JSON.stringify(Object.keys(catMap))},datasets:[{data:${JSON.stringify(Object.values(catMap))},backgroundColor:cl}]},options:opts});
 new Chart(document.getElementById("gFuentes"),{type:"doughnut",data:{labels:${JSON.stringify(Object.keys(fuentesAll))},datasets:[{data:${JSON.stringify(Object.values(fuentesAll))},backgroundColor:cl}]},options:opts});
 new Chart(document.getElementById("gInv"),{type:"doughnut",data:{labels:${JSON.stringify(Object.keys(invMap))},datasets:[{data:${JSON.stringify(Object.values(invMap))},backgroundColor:cl}]},options:opts});
-new Chart(document.getElementById("gMet"),{type:"bar",data:{labels:${JSON.stringify(Object.keys(metMap))},datasets:[{label:"Gastos",data:${JSON.stringify(Object.values(metMap))},backgroundColor:"#3b82f6",borderRadius:4}]},options:{...opts,scales:{x:{ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}},y:{ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}}}}});
+new Chart(document.getElementById("gMet"),{type:"bar",data:{labels:${JSON.stringify(labAll)},datasets:${JSON.stringify(metAcumDsG)}},options:{...opts,scales:{x:{stacked:true,ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}},y:{stacked:true,ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}}}}});
+${Object.keys(brokerMapG).length?`new Chart(document.getElementById("gBroker"),{type:"bar",data:{labels:${JSON.stringify(Object.keys(brokerMapG))},datasets:[{label:"Valor ($)",data:${JSON.stringify(Object.values(brokerMapG))},backgroundColor:cl,borderRadius:8}]},options:{...opts,indexAxis:"y",scales:{x:{ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}},y:{ticks:{color:"#94a3b8"},grid:{color:"#1e3a5f"}}}}});`:""}
 <\/script></body></html>`;
 
   const w=window.open("","_blank"); w.document.write(html); w.document.close();
@@ -1157,29 +1243,172 @@ function exportarExcel() {
   const movF=(todo?[...movimientos]:movimientos.filter(m=>selArr.includes(m.fecha.substring(0,7)))).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
 
   const T=calcularTotales(), valorInv=calcularValorInversiones(), dn=calcularDeudaNeta();
+  const pat=T.saldoCaja+valorInv-dn;
 
   const libro=XLSX.utils.book_new();
+
+  /* ── Hoja 1: Movimientos ── */
   XLSX.utils.book_append_sheet(libro,XLSX.utils.json_to_sheet(movF.map(m=>({
     Fecha:m.fecha,Descripcion:m.descripcion||m.desc,Tipo:m.tipo,
-    Categoria:m.categoria||"",MetodoPago:m.metodoPago||"",Valor:m.valor
+    Categoria:m.categoria||"",Subcategoria:m.subcategoria||"",
+    MetodoPago:m.metodoPago||"",Valor:m.valor,
+    EsCredito:m.esCredito?"Sí":"No"
   }))),"Movimientos");
+
+  /* ── Hoja 2: Estado de Resultados (P&G) ── */
+  const mesesAll=[...new Set(movimientos.map(m=>m.fecha.substring(0,7)))].sort();
+  const filasResultados=[];
+  filasResultados.push({Concepto:"═══ ESTADO DE RESULTADOS ═══",Valor:""});
+  filasResultados.push({Concepto:"",Valor:""});
+  let totI=0,totG=0,totP=0;
+  mesesAll.forEach(mes=>{
+    let i=0,g=0,p=0;
+    movimientos.filter(m=>m.fecha.startsWith(mes)).forEach(m=>{
+      if(m.tipo==="ingreso") i+=m.valor;
+      else if(m.tipo==="gasto") g+=m.valor;
+      else if(m.tipo==="pago_deuda_cuota") p+=m.valor;
+    });
+    const [a,mo]=mes.split("-");
+    const nomM=new Date(Number(a),Number(mo)-1,1).toLocaleDateString("es-CO",{month:"long",year:"numeric"});
+    filasResultados.push({Concepto:`── ${nomM} ──`,Valor:""});
+    filasResultados.push({Concepto:"  Ingresos",Valor:i});
+    filasResultados.push({Concepto:"  Gastos",Valor:-g});
+    filasResultados.push({Concepto:"  Pagos deuda",Valor:-p});
+    filasResultados.push({Concepto:"  Resultado neto",Valor:i-g-p});
+    filasResultados.push({Concepto:"",Valor:""});
+    totI+=i; totG+=g; totP+=p;
+  });
+  filasResultados.push({Concepto:"═══ TOTALES ═══",Valor:""});
+  filasResultados.push({Concepto:"TOTAL Ingresos",Valor:totI});
+  filasResultados.push({Concepto:"TOTAL Gastos",Valor:-totG});
+  filasResultados.push({Concepto:"TOTAL Pagos deuda",Valor:-totP});
+  filasResultados.push({Concepto:"RESULTADO NETO",Valor:totI-totG-totP});
+  XLSX.utils.book_append_sheet(libro,XLSX.utils.json_to_sheet(filasResultados),"Estado de Resultados");
+
+  /* ── Hoja 3: Balance General ── */
+  const filasBalance=[];
+  filasBalance.push({Seccion:"═══ BALANCE GENERAL ═══",Concepto:"",Valor:""});
+  filasBalance.push({Seccion:"",Concepto:"",Valor:""});
+  filasBalance.push({Seccion:"ACTIVOS",Concepto:"Saldo en Caja",Valor:T.saldoCaja});
+  let totActInv=0;
+  inversiones.forEach(inv=>{
+    const va=valorActualInversion(inv);
+    filasBalance.push({Seccion:"ACTIVOS",Concepto:`Inversión: ${inv.nombre} (${inv.tipo})`,Valor:va});
+    totActInv+=va;
+  });
+  filasBalance.push({Seccion:"ACTIVOS",Concepto:"TOTAL ACTIVOS",Valor:T.saldoCaja+totActInv});
+  filasBalance.push({Seccion:"",Concepto:"",Valor:""});
+  deudas.forEach(d=>{
+    filasBalance.push({Seccion:"PASIVOS",Concepto:`Deuda: ${d.nombre} (${d.tipo})`,Valor:-saldoVivo(d)});
+  });
+  filasBalance.push({Seccion:"PASIVOS",Concepto:"TOTAL PASIVOS",Valor:-dn});
+  filasBalance.push({Seccion:"",Concepto:"",Valor:""});
+  filasBalance.push({Seccion:"PATRIMONIO",Concepto:"PATRIMONIO NETO",Valor:pat});
+  XLSX.utils.book_append_sheet(libro,XLSX.utils.json_to_sheet(filasBalance),"Balance General");
+
+  /* ── Hoja 4: Flujo de Caja ── */
+  const filasFlujo=[];
+  filasFlujo.push({Concepto:"═══ FLUJO DE CAJA ═══",Valor:""});
+  filasFlujo.push({Concepto:"",Valor:""});
+  let saldoAcum=0;
+  mesesAll.forEach(mes=>{
+    let i=0,g=0,p=0,ti=0;
+    movimientos.filter(m=>m.fecha.startsWith(mes)).forEach(m=>{
+      if(m.tipo==="ingreso") i+=m.valor;
+      else if(m.tipo==="gasto"&&!m.esCredito) g+=m.valor;
+      else if(m.tipo==="pago_deuda_cuota") p+=m.valor;
+      else if(m.tipo==="traslado_inversion") ti+=m.valor;
+    });
+    const [a,mo]=mes.split("-");
+    const nomM=new Date(Number(a),Number(mo)-1,1).toLocaleDateString("es-CO",{month:"long",year:"numeric"});
+    saldoAcum+=i-g-p-ti;
+    filasFlujo.push({Concepto:`── ${nomM} ──`,Valor:""});
+    filasFlujo.push({Concepto:"  (+) Ingresos",Valor:i});
+    filasFlujo.push({Concepto:"  (-) Gastos caja",Valor:-g});
+    filasFlujo.push({Concepto:"  (-) Pagos deuda",Valor:-p});
+    filasFlujo.push({Concepto:"  (-) Traslados inversión",Valor:-ti});
+    filasFlujo.push({Concepto:"  Flujo neto del mes",Valor:i-g-p-ti});
+    filasFlujo.push({Concepto:"  Saldo acumulado",Valor:saldoAcum});
+    filasFlujo.push({Concepto:"",Valor:""});
+  });
+  XLSX.utils.book_append_sheet(libro,XLSX.utils.json_to_sheet(filasFlujo),"Flujo de Caja");
+
+  /* ── Hoja 5: Inversiones ── */
   XLSX.utils.book_append_sheet(libro,XLSX.utils.json_to_sheet(inversiones.map(inv=>{
     const va=valorActualInversion(inv),ci=capitalInvertido(inv);
-    return{Tipo:inv.tipo,Nombre:inv.nombre,Invertido:ci,ValorActual:va,Ganancia:va-ci,Origen:inv.origen};
+    return{Tipo:inv.tipo,Nombre:inv.nombre,Broker:inv.broker||"—",Invertido:ci,ValorActual:va,
+           Ganancia:va-ci,PctGanancia:ci>0?((va-ci)/ci*100).toFixed(2)+"%":"—",Origen:inv.origen};
   })),"Inversiones");
+
+  /* ── Hoja 6: Deudas (resumen) ── */
   XLSX.utils.book_append_sheet(libro,XLSX.utils.json_to_sheet(deudas.map(d=>({
-    Nombre:d.nombre,Tipo:d.tipo,Capital:d.capital,SaldoVivo:saldoVivo(d),TipoTasa:d.tipoTasa,Tasa:d.tasaFija,Pagos:d.pagos.length
+    Nombre:d.nombre,Tipo:d.tipo,CapitalOriginal:d.capital,SaldoVivo:saldoVivo(d),
+    TotalPagado:d.pagos.reduce((s,p)=>s+(p.capitalPagado||0),0),
+    TotalInteres:d.pagos.reduce((s,p)=>s+(p.interes||0),0),
+    TipoTasa:d.tipoTasa,TasaMensual:d.tasaFija||0,Cuotas:d.cuotas||0,NumeroPagos:d.pagos.length
   }))),"Deudas");
+
+  /* ── Hojas 7+: Amortización por deuda ── */
+  deudas.forEach(d=>{
+    if(d.pagos && d.pagos.length){
+      const nombreHoja=`Amort. ${d.nombre}`.substring(0,31);
+      const filasAmort=d.pagos.map((p,i)=>({
+        "#":i+1,Fecha:p.fecha,CuotaTotal:p.cuota,
+        Capital:p.capitalPagado||0,Interes:p.interes||0,
+        TasaAplicada:(p.tasaAplicada||0)+"%",
+        SaldoRestante:Math.max(0,d.capital-d.pagos.slice(0,i+1).reduce((s,pp)=>s+(pp.capitalPagado||0),0))
+      }));
+      XLSX.utils.book_append_sheet(libro,XLSX.utils.json_to_sheet(filasAmort),nombreHoja);
+    }
+  });
+
+  /* ── Estado Actual (resumen rápido) ── */
   XLSX.utils.book_append_sheet(libro,XLSX.utils.json_to_sheet([
-    {Concepto:"Ingresos",Valor:T.ingresos},{Concepto:"Gastos",Valor:T.gastos},
-    {Concepto:"Pagos deuda",Valor:T.pagosDeuda},{Concepto:"Traslados inv",Valor:T.trasladosInv},
-    {Concepto:"Saldo caja",Valor:T.saldoCaja},{Concepto:"Inversiones",Valor:valorInv},
-    {Concepto:"Deuda neta",Valor:dn},{Concepto:"Patrimonio",Valor:T.saldoCaja+valorInv-dn}
-  ]),"Estado Actual");
+    {Concepto:"Ingresos totales",Valor:T.ingresos},
+    {Concepto:"Gastos caja",Valor:T.gastos},
+    {Concepto:"Pagos deuda",Valor:T.pagosDeuda},
+    {Concepto:"Traslados inversión",Valor:T.trasladosInv},
+    {Concepto:"Saldo caja",Valor:T.saldoCaja},
+    {Concepto:"Valor inversiones",Valor:valorInv},
+    {Concepto:"Deuda neta",Valor:dn},
+    {Concepto:"Patrimonio",Valor:pat},
+    {Concepto:"Tasa de ahorro",Valor:T.ingresos>0?((T.saldoCaja/T.ingresos)*100).toFixed(1)+"%":"0%"}
+  ]),"Resumen Ejecutivo");
+
   XLSX.writeFile(libro,todo?"finanzas_completo.xlsx":`finanzas_${selArr.join("_")}.xlsx`);
 }
 
-/* ── INIT ── */
+/* ════════════════════════════════
+   SWIPE NAVIGATION
+   ════════════════════════════════ */
+(function(){
+  const paginas = ["dashboard","movimientos","inversiones","deudas","estadisticas","configuracion"];
+  let touchStartX = 0, touchStartY = 0;
+
+  document.addEventListener("touchstart", e => {
+    touchStartX = e.changedTouches[0].clientX;
+    touchStartY = e.changedTouches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener("touchend", e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    // Solo contar si el movimiento horizontal es mayor al vertical y supera 60px
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+
+    const activa = document.querySelector(".page.active");
+    if (!activa) return;
+    const idx = paginas.indexOf(activa.id);
+    if (idx === -1) return;
+
+    if (dx < 0 && idx < paginas.length - 1) abrirPagina(paginas[idx + 1]); // izquierda → siguiente
+    if (dx > 0 && idx > 0)                  abrirPagina(paginas[idx - 1]); // derecha → anterior
+  }, { passive: true });
+})();
+
+
 actualizar();
 if (document.getElementById("tablaInversiones")) actualizarInversiones();
 if (document.getElementById("listaDeudas"))      dibujarDeudas();
+// Inicializar formulario de movimientos
+if (document.getElementById("tipo")) actualizarTipoMovimiento();

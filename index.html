@@ -66,12 +66,7 @@
       </div>
     </div>
 
-    <!-- Nota informativa del modelo -->
-    <div style="background:#1e293b;border-radius:14px;padding:14px;margin-top:4px;font-size:12px;color:#64748b;line-height:1.6">
-      <b style="color:#94a3b8">¿Cómo se calcula?</b><br>
-      Saldo caja = Ingresos − Gastos − Pagos de deuda − Traslados a inversión<br>
-      Patrimonio = Saldo caja + Inversiones − Deuda neta
-    </div>
+
   </div>
 </section>
 
@@ -94,19 +89,17 @@
       </select>
     </div>
 
-    <select id="categoria" onchange="cargarSubcategorias()">
-      <option value="">Categoría</option>
-      <option>Entradas</option><option>Mercado</option><option>Restaurante</option><option>Transporte</option>
-      <option>Vivienda</option><option>Ocio</option><option>Salud</option>
-      <option>Educación</option><option>Emergencia</option><option>Servicios</option><option>Otros</option>
-    </select>
-
-    <select id="subcategoria"><option value="">Subcategoría</option></select>
+    <div id="filaCategoriaSubcat">
+      <select id="categoria" onchange="cargarSubcategorias()" style="width:100%;padding:13px 15px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:14px;outline:none;-webkit-appearance:none;appearance:none;margin-bottom:11px">
+        <option value="">Categoría</option>
+      </select>
+      <select id="subcategoria" style="width:100%;padding:13px 15px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:14px;outline:none;-webkit-appearance:none;appearance:none"><option value="">Subcategoría</option></select>
+    </div>
 
     <select id="metodoPago">
       <option>Efectivo</option><option>Débito</option>
       <option>Banco Bogotá Crédito</option><option>Davivienda Crédito</option>
-      <option>Nequi</option><option>Daviplata</option><option>Transferencia</option>
+      <option>Nequi</option><option>Daviplata</option><option>Transferencia</option><option>ARQ</option>
     </select>
 
     <input type="date" id="fecha">
@@ -129,6 +122,19 @@
     </select>
 
     <input id="invNombre" placeholder="Nombre (ej: AAPL, CDT Bancolombia, Apto 101)">
+
+    <select id="invBroker">
+      <option value="">— Plataforma / Bróker —</option>
+      <option>Binance</option>
+      <option>Davivienda</option>
+      <option>Bancolombia</option>
+      <option>Otro Banco</option>
+      <option>eToro</option>
+      <option>Trii</option>
+      <option>ARQ</option>
+      <option>Wenia</option>
+      <option>Otro</option>
+    </select>
 
     <div id="filaCanPrecio">
       <input id="invCantidad"    type="number" placeholder="Cantidad de unidades" style="margin-bottom:10px;width:100%;padding:13px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:15px;outline:none">
@@ -197,9 +203,11 @@
     <div class="graficaCard"><h3>Evolución Deuda Mensual</h3><canvas id="graficaDeuda"></canvas></div>
     <div class="graficaCard"><h3>Gastos por Categoría</h3><canvas id="graficaCategorias"></canvas></div>
     <div class="graficaCard"><h3>Gastos por Categoría por Mes</h3><canvas id="graficaCategoriasMensual"></canvas></div>
-    <div class="graficaCard"><h3>Métodos de Pago</h3><canvas id="graficaMetodos"></canvas></div>
+    <div class="graficaCard"><h3>Métodos de Pago (mes)</h3><canvas id="graficaMetodos"></canvas></div>
+    <div class="graficaCard"><h3>Métodos de Pago — Acumulado</h3><canvas id="graficaMetodosAcum"></canvas></div>
     <div class="graficaCard"><h3>Portafolio de Inversiones</h3><canvas id="graficaInversiones"></canvas></div>
-    <div class="graficaCard"><h3>Fuentes de Ingresos</h3><canvas id="graficaFuentesIngresos"></canvas></div>
+    <div class="graficaCard"><h3>Concentración de Riesgo por Bróker</h3><canvas id="graficaRiesgoBroker"></canvas></div>
+    <div class="graficaCard"><h3>Fuentes de Ingresos (mes)</h3><canvas id="graficaFuentesIngresos"></canvas></div>
   </div>
 </section>
 
@@ -247,7 +255,7 @@
       </select>
       <select id="editMetodo">
         <option>Efectivo</option><option>Débito</option><option>Banco Bogotá Crédito</option>
-        <option>Davivienda Crédito</option><option>Nequi</option><option>Daviplata</option><option>Transferencia</option>
+        <option>Davivienda Crédito</option><option>Nequi</option><option>Daviplata</option><option>Transferencia</option><option>ARQ</option>
       </select>
       <input id="editFecha" type="date">
     </div>

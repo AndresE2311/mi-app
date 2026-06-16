@@ -6,21 +6,10 @@ body {
   background: #0f172a;
   color: #e2e8f0;
   font-size: 15px;
-  background-image: url('icon-512.png');
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-attachment: fixed;
-  background-size: 320px 320px;
-  background-blend-mode: luminosity;
 }
 
 body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.88);
-  z-index: 0;
-  pointer-events: none;
+  display: none;
 }
 
 main, header, nav { position: relative; z-index: 1; }
