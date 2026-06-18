@@ -6,7 +6,7 @@
   <title>Finanzas Personales</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="favicon.ico">
-  <meta name="theme-color" content="#1e3a5f">
+  <meta name="theme-color" content="#001a00">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Finanzas">
@@ -16,41 +16,73 @@
 <body>
 
 <!-- ══════ PANTALLA DE AUTENTICACIÓN ══════ -->
-<div id="authScreen" style="display:none;position:fixed;inset:0;background:#0f172a;z-index:9999;align-items:center;justify-content:center;padding:20px">
-  <div style="width:100%;max-width:380px">
+<div id="authScreen" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;padding:20px;flex-direction:column">
+  <div class="authContainer">
+
     <!-- Logo -->
-    <div style="text-align:center;margin-bottom:32px">
-      <div style="font-size:48px;margin-bottom:8px">💰</div>
-      <h1 style="font-size:26px;font-weight:900;background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:0">Finanzas</h1>
-      <p style="font-size:13px;color:#64748b;margin:4px 0 0">Tu dinero, bajo control</p>
+    <div class="authLogo">
+      <span class="authLogoIcon">💰</span>
+      <h1 class="authLogoTitle">Finanzas</h1>
+      <p class="authLogoSub">Tu dinero, bajo control</p>
     </div>
+
     <!-- Card -->
-    <div style="background:#1e293b;border-radius:20px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
-      <h2 id="authTitle" style="font-size:18px;font-weight:800;color:#e2e8f0;margin:0 0 20px;text-align:center">Iniciar sesión</h2>
-      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
-        <input id="authEmail" type="email" placeholder="Tu email" autocomplete="email"
-          style="padding:13px 15px;border:1.5px solid #1e3a5f;border-radius:13px;background:#0f172a;color:#e2e8f0;font-size:14px;outline:none;width:100%;box-sizing:border-box"
-          onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#1e3a5f'">
-        <input id="authPassword" type="password" placeholder="Contraseña (mín. 6 caracteres)" autocomplete="current-password"
-          style="padding:13px 15px;border:1.5px solid #1e3a5f;border-radius:13px;background:#0f172a;color:#e2e8f0;font-size:14px;outline:none;width:100%;box-sizing:border-box"
-          onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#1e3a5f'">
+    <div class="authCard">
+      <h2 id="authTitle" class="authCardTitle">Iniciar sesión</h2>
+
+      <div class="authInputWrap">
+        <span class="authInputIcon">✉️</span>
+        <input id="authEmail" type="email" placeholder="Correo electrónico" autocomplete="email"
+          onfocus="this.style.borderColor='#00c832'" onblur="this.style.borderColor='rgba(0,255,65,0.2)'">
       </div>
-      <p id="authError" style="color:#ef4444;font-size:13px;margin:0 0 14px;min-height:18px;text-align:center"></p>
-      <button id="authSubmit" onclick="submitAuth()"
-        style="width:100%;padding:14px;font-size:15px;font-weight:700;border-radius:13px;background:linear-gradient(135deg,#2563eb,#4f46e5);border:none;color:white;cursor:pointer">
-        Entrar
-      </button>
-      <p style="text-align:center;margin:16px 0 0;font-size:13px;color:#64748b">
+      <div class="authInputWrap">
+        <span class="authInputIcon">🔒</span>
+        <input id="authPassword" type="password" placeholder="Contraseña (mín. 6 caracteres)" autocomplete="current-password"
+          onfocus="this.style.borderColor='#00c832'" onblur="this.style.borderColor='rgba(0,255,65,0.2)'">
+      </div>
+
+      <!-- Campo nombre (solo en registro) -->
+      <div id="authNameWrap" class="authInputWrap" style="display:none">
+        <span class="authInputIcon">👤</span>
+        <input id="authName" type="text" placeholder="¿Cómo te llamamos?" autocomplete="name"
+          onfocus="this.style.borderColor='#00c832'" onblur="this.style.borderColor='rgba(0,255,65,0.2)'">
+      </div>
+
+      <p id="authError" style="color:#ff4444;font-size:13px;margin:0 0 14px;min-height:18px;text-align:center"></p>
+
+      <button id="authSubmit" onclick="submitAuth()">Entrar</button>
+
+      <p class="authToggle">
         <span id="authToggleText">¿No tienes cuenta? </span>
-        <a id="authToggleLink" onclick="toggleModoAuth()" style="color:#60a5fa;cursor:pointer;font-weight:600;text-decoration:none">Regístrate</a>
+        <a id="authToggleLink" onclick="toggleModoAuth()">Regístrate</a>
       </p>
     </div>
-    <p style="text-align:center;margin-top:20px;font-size:11px;color:#334155">Tus datos son privados y solo tú puedes verlos 🔒</p>
+
+    <p class="authSecure">🔒 &nbsp;Datos privados · Encriptación de extremo a extremo</p>
   </div>
 </div>
 
 <!-- ══════ APP PRINCIPAL ══════ -->
 <div id="appShell" style="display:none">
+
+<!-- ── Sidebar Desktop Nav ── -->
+<nav id="desktopNav">
+  <button onclick="abrirPagina('dashboard')" id="dnav-dashboard" class="nav-active">
+    <span class="navEmoji">🏠</span> Inicio
+  </button>
+  <button onclick="abrirPagina('movimientos')" id="dnav-movimientos">
+    <span class="navEmoji">💸</span> Movimientos
+  </button>
+  <button onclick="abrirPagina('inversiones')" id="dnav-inversiones">
+    <span class="navEmoji">📈</span> Inversiones
+  </button>
+  <button onclick="abrirPagina('deudas')" id="dnav-deudas">
+    <span class="navEmoji">💳</span> Deudas
+  </button>
+  <button onclick="abrirPagina('estadisticas')" id="dnav-estadisticas">
+    <span class="navEmoji">🕸️</span> Gráficas
+  </button>
+</nav>
 
 <header class="topbar">
   <div class="headerInner">
@@ -59,6 +91,7 @@
       <h1 class="headerTitle">Finanzas</h1>
       <p class="headerSub">Tu dinero, bajo control</p>
     </div>
+    <!-- Badge usuario — se llena desde JS -->
   </div>
 </header>
 
@@ -97,40 +130,34 @@
         <div class="miniLeft"><span class="miniIcon">💎</span><span class="miniLabel">Patrimonio</span></div>
         <h2 id="patrimonio">$0</h2>
       </div>
-      <div class="mini" style="border-left:4px solid #a78bfa">
-        <div class="miniLeft"><span class="miniIcon">📊</span><span class="miniLabel">Tasa Ahorro</span></div>
+      <div class="mini" style="border-left:4px solid #00ff99">
+        <div class="miniLeft"><span class="miniIcon">🛡️</span><span class="miniLabel">Tasa Ahorro</span></div>
         <h2 id="tasaAhorro">0%</h2>
       </div>
     </div>
-
-
   </div>
 </section>
 
 <!-- ══════ MOVIMIENTOS ══════ -->
 <section id="movimientos" class="page">
-  <h2>💸 Registrar Movimiento</h2>
-  <div class="formulario">
-
+    <div class="formulario">
     <select id="tipo" onchange="actualizarTipoMovimiento()">
       <option value="ingreso">💵 Ingreso</option>
-      <option value="gasto">💸 Gasto (sale de caja)</option>
-      <option value="pago_deuda_cuota">💳 Pago de Deuda (sale de caja)</option>
-
+      <option value="gasto">💸 Gasto </option>
+      <option value="pago_deuda_cuota">💳 Pago de Deuda </option>
     </select>
 
-    <!-- Visible solo para pago de deuda -->
     <div id="filaDeudaVinculo" style="display:none">
-      <select id="selDeudaVinculo" style="width:100%;padding:12px;border:1.5px solid #1e3a5f;border-radius:12px;background:#1e293b;color:#e2e8f0;font-size:14px;-webkit-appearance:none">
+      <select id="selDeudaVinculo" style="width:100%;padding:12px;border:1.5px solid #ccd8cc;border-radius:12px;background:#f5f7f5;color:#111811;font-size:14px;-webkit-appearance:none">
         <option value="">— Vincular a deuda (opcional) —</option>
       </select>
     </div>
 
     <div id="filaCategoriaSubcat">
-      <select id="categoria" onchange="cargarSubcategorias()" style="width:100%;padding:13px 15px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:14px;outline:none;-webkit-appearance:none;appearance:none;margin-bottom:11px">
+      <select id="categoria" onchange="cargarSubcategorias()" style="width:100%;padding:13px 15px;border:1.5px solid #1e3a1e;border-radius:13px;background:#f5f7f5;color:#111811;font-size:14px;outline:none;-webkit-appearance:none;appearance:none;margin-bottom:11px">
         <option value="">Categoría</option>
       </select>
-      <select id="subcategoria" style="width:100%;padding:13px 15px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:14px;outline:none;-webkit-appearance:none;appearance:none"><option value="">Subcategoría</option></select>
+      <select id="subcategoria" style="width:100%;padding:13px 15px;border:1.5px solid #1e3a1e;border-radius:13px;background:#f5f7f5;color:#111811;font-size:14px;outline:none;-webkit-appearance:none;appearance:none"><option value="">Subcategoría</option></select>
     </div>
 
     <select id="metodoPago">
@@ -152,7 +179,6 @@
 <section id="inversiones" class="page">
   <h2>📈 Mis Inversiones</h2>
   <div class="formulario">
-
     <select id="tipoActivo" onchange="actualizarFormInversion()">
       <option>Acción</option><option>ETF</option><option>Criptomoneda</option>
       <option>CDT</option><option>Fondo</option><option>Finca Raíz</option><option>Efectivo</option>
@@ -162,32 +188,26 @@
 
     <select id="invBroker">
       <option value="">— Plataforma / Bróker —</option>
-      <option>Binance</option>
-      <option>Davivienda</option>
-      <option>Bancolombia</option>
-      <option>Otro Banco</option>
-      <option>eToro</option>
-      <option>Trii</option>
-      <option>ARQ</option>
-      <option>Wenia</option>
-      <option>Otro</option>
+      <option>Binance</option><option>Davivienda</option><option>Bancolombia</option>
+      <option>Otro Banco</option><option>eToro</option><option>Trii</option>
+      <option>ARQ</option><option>Wenia</option><option>Otro</option>
     </select>
 
     <div id="filaCanPrecio">
-      <input id="invCantidad"    type="number" placeholder="Cantidad de unidades" style="margin-bottom:10px;width:100%;padding:13px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:15px;outline:none">
-      <input id="invPrecioCompra" type="number" placeholder="Precio de compra por unidad" style="margin-bottom:10px;width:100%;padding:13px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:15px;outline:none">
-      <input id="invPrecioActual" type="number" placeholder="Precio actual por unidad" style="width:100%;padding:13px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:15px;outline:none">
+      <input id="invCantidad"     type="number" placeholder="Cantidad de unidades" style="margin-bottom:10px;width:100%;padding:13px;border:1.5px solid #ccd8cc;border-radius:13px;background:#f5f7f5;color:#111811;font-size:14px;outline:none">
+      <input id="invPrecioCompra" type="number" placeholder="Precio de compra por unidad" style="margin-bottom:10px;width:100%;padding:13px;border:1.5px solid #ccd8cc;border-radius:13px;background:#f5f7f5;color:#111811;font-size:14px;outline:none">
+      <input id="invPrecioActual" type="number" placeholder="Precio actual por unidad" style="width:100%;padding:13px;border:1.5px solid #ccd8cc;border-radius:13px;background:#f5f7f5;color:#111811;font-size:14px;outline:none">
     </div>
-    <div id="filaCapital"      style="display:none"><input id="invCapital"   type="number" placeholder="Capital / valor nominal" style="width:100%;padding:13px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:15px;outline:none"></div>
-    <div id="filaTasaEA"       style="display:none"><input id="invTasaEA"    type="number" placeholder="Tasa EA anual (%)" style="width:100%;padding:13px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:15px;outline:none"></div>
-    <div id="filaFechaInicio"  style="display:none"><input id="invFechaInicio" type="date" style="width:100%;padding:13px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:15px;outline:none"><p style="font-size:11px;color:#64748b;margin-top:4px">Fecha de inicio</p></div>
-    <div id="filaFechaVcto"    style="display:none"><input id="invFechaVcto" type="date" style="width:100%;padding:13px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:15px;outline:none"><p style="font-size:11px;color:#64748b;margin-top:4px">Fecha de vencimiento</p></div>
-    <div id="filaValorCompra"  style="display:none"><input id="invValorCompra" type="number" placeholder="Valor de compra / avalúo" style="width:100%;padding:13px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:15px;outline:none"></div>
-    <div id="filaValorActual"  style="display:none"><input id="invValorActual" type="number" placeholder="Valor de mercado actual" style="width:100%;padding:13px;border:1.5px solid #1e3a5f;border-radius:13px;background:#1e293b;color:#e2e8f0;font-size:15px;outline:none"></div>
+    <div id="filaCapital"     style="display:none"><input id="invCapital"    type="number" placeholder="Capital / valor nominal" style="width:100%;padding:13px;border:1.5px solid #ccd8cc;border-radius:13px;background:#f5f7f5;color:#111811;font-size:14px;outline:none"></div>
+    <div id="filaTasaEA"      style="display:none"><input id="invTasaEA"     type="number" placeholder="Tasa EA anual (%)" style="width:100%;padding:13px;border:1.5px solid #ccd8cc;border-radius:13px;background:#f5f7f5;color:#111811;font-size:14px;outline:none"></div>
+    <div id="filaFechaInicio" style="display:none"><input id="invFechaInicio" type="date" style="width:100%;padding:13px;border:1.5px solid #ccd8cc;border-radius:13px;background:#f5f7f5;color:#111811;font-size:14px;outline:none"><p style="font-size:11px;color:#94c494;margin-top:4px">Fecha de inicio</p></div>
+    <div id="filaFechaVcto"   style="display:none"><input id="invFechaVcto"  type="date" style="width:100%;padding:13px;border:1.5px solid #ccd8cc;border-radius:13px;background:#f5f7f5;color:#111811;font-size:14px;outline:none"><p style="font-size:11px;color:#94c494;margin-top:4px">Fecha de vencimiento</p></div>
+    <div id="filaValorCompra" style="display:none"><input id="invValorCompra" type="number" placeholder="Valor de compra / avalúo" style="width:100%;padding:13px;border:1.5px solid #ccd8cc;border-radius:13px;background:#f5f7f5;color:#111811;font-size:14px;outline:none"></div>
+    <div id="filaValorActual" style="display:none"><input id="invValorActual" type="number" placeholder="Valor de mercado actual" style="width:100%;padding:13px;border:1.5px solid #ccd8cc;border-radius:13px;background:#f5f7f5;color:#111811;font-size:14px;outline:none"></div>
 
     <select id="invOrigen">
-      <option value="externo">💼 Capital externo (no descuenta de caja)</option>
-      <option value="caja">🏦 Viene de mi caja / ahorro (descuenta de caja)</option>
+      <option value="externo">💸 Capital externo </option>
+      <option value="caja">🏦 Viene de mi caja / ahorro </option>
     </select>
 
     <button onclick="agregarInversion()">Agregar Inversión</button>
@@ -199,38 +219,36 @@
 <section id="deudas" class="page">
   <h2>💳 Mis Deudas</h2>
   <div style="max-width:500px;margin:0 auto 18px">
-    <button onclick="abrirModalDeuda()" style="width:100%;padding:15px;font-size:15px;background:linear-gradient(135deg,#f97316,#ef4444)">+ Nueva Deuda</button>
+    <button onclick="abrirModalDeuda()" style="width:100%;padding:15px;font-size:15px;background:linear-gradient(135deg,#ff8c00,#ff4444);color:#fff">+ Nueva Deuda</button>
   </div>
   <div id="listaDeudas" style="max-width:500px;margin:auto"></div>
 </section>
 
 <!-- ══════ ESTADÍSTICAS ══════ -->
 <section id="estadisticas" class="page">
-  <h2>📊 Estadísticas</h2>
+  <h2>🕸️ Estadísticas</h2>
 
-  <!-- KPIs del período seleccionado -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:500px;margin:0 auto 16px">
-    <div style="background:#1e293b;border-radius:13px;padding:13px;text-align:center">
-      <p style="font-size:11px;color:#94a3b8;margin:0 0 3px">Ingresos período</p>
-      <p id="statIngresos" style="font-size:17px;font-weight:700;color:#22c55e;margin:0">$0</p>
+  <div class="statGrid">
+    <div class="statBtn statBtn--ingreso">
+      <p class="statLabel">Ingresos período</p>
+      <p id="statIngresos" class="statVal" style="color:#006b1a">$0</p>
     </div>
-    <div style="background:#1e293b;border-radius:13px;padding:13px;text-align:center">
-      <p style="font-size:11px;color:#94a3b8;margin:0 0 3px">Gastos período</p>
-      <p id="statGastos" style="font-size:17px;font-weight:700;color:#ef4444;margin:0">$0</p>
+    <div class="statBtn statBtn--gasto">
+      <p class="statLabel">Gastos período</p>
+      <p id="statGastos" class="statVal" style="color:#ff4444">$0</p>
     </div>
-    <div style="background:#1e293b;border-radius:13px;padding:13px;text-align:center">
-      <p style="font-size:11px;color:#94a3b8;margin:0 0 3px">Pagos deuda</p>
-      <p id="statPagos" style="font-size:17px;font-weight:700;color:#f59e0b;margin:0">$0</p>
+    <div class="statBtn statBtn--deuda">
+      <p class="statLabel">Pagos deuda</p>
+      <p id="statPagos" class="statVal" style="color:#ff8c00">$0</p>
     </div>
-    <div style="background:#1e293b;border-radius:13px;padding:13px;text-align:center">
-      <p style="font-size:11px;color:#94a3b8;margin:0 0 3px">Balance neto</p>
-      <p id="statBalance" style="font-size:17px;font-weight:700;color:#60a5fa;margin:0">$0</p>
+    <div class="statBtn statBtn--balance">
+      <p class="statLabel">Balance neto</p>
+      <p id="statBalance" class="statVal" style="color:#008828">$0</p>
     </div>
   </div>
 
-  <!-- Selector de mes -->
   <div style="max-width:500px;margin:0 auto 16px">
-    <p style="font-size:12px;color:#94a3b8;margin-bottom:8px">Filtrar por mes:</p>
+    <p style="font-size:12px;color:#94c494;margin-bottom:8px">Filtrar por mes:</p>
     <div id="selectorMeses" class="selectorMeses"></div>
   </div>
 
@@ -248,32 +266,44 @@
   </div>
 </section>
 
-<!-- ══════ HERRAMIENTAS ══════ -->
+<!-- ══════ AJUSTES ══════ -->
 <section id="configuracion" class="page">
-  <h2>⚙ Herramientas</h2>
+  <h2>⚙️ Ajustes y Herramientas</h2>
   <div class="configuracion">
     <button onclick="exportarExcel()">↗️ Exportar a Excel</button>
     <button onclick="generarInformeMensual()">📅 Informe Mensual</button>
     <button onclick="generarEstadoGeneral()">💎 Estado General</button>
+    <button onclick="signOut()" style="background:rgba(255,68,68,.15);color:#ff4444;border:1px solid rgba(255,68,68,.3);font-weight:700;margin-top:20px">
+      🚪 Cerrar sesión
+    </button>
   </div>
 </section>
 
 </main>
 
-<!-- ══════ NAV (6 tabs) ══════ -->
+<!-- ══════ NAV MOBILE (5 tabs) ══════ -->
 <nav class="bottomNav">
-  <button onclick="abrirPagina('dashboard')">🏠<br><span>Inicio</span></button>
-  <button onclick="abrirPagina('movimientos')">💸<br><span>Movimientos</span></button>
-  <button onclick="abrirPagina('inversiones')">📈<br><span>Inversiones</span></button>
-  <button onclick="abrirPagina('deudas')">💳<br><span>Deudas</span></button>
-  <button onclick="abrirPagina('estadisticas')">📊<br><span>Gráficas</span></button>
-  <button onclick="abrirPagina('configuracion')">⚙<br><span>Ajustes</span></button>
+  <button onclick="abrirPagina('dashboard')" id="mnav-dashboard" class="nav-active">
+    🏠<br><span>Inicio</span>
+  </button>
+  <button onclick="abrirPagina('movimientos')" id="mnav-movimientos">
+    💸<br><span>Movimientos</span>
+  </button>
+  <button onclick="abrirPagina('inversiones')" id="mnav-inversiones">
+    📈<br><span>Inversiones</span>
+  </button>
+  <button onclick="abrirPagina('deudas')" id="mnav-deudas">
+    💳<br><span>Deudas</span>
+  </button>
+  <button onclick="abrirPagina('estadisticas')" id="mnav-estadisticas">
+    🕸️<br><span>Gráficas</span>
+  </button>
 </nav>
 
 <!-- ══════ MODAL EDITAR MOVIMIENTO ══════ -->
 <div id="modalEditar" class="modalOverlay">
   <div class="modalBox">
-    <h3 style="color:#60a5fa;margin:0 0 16px;font-size:16px">✏ Editar Movimiento</h3>
+    <h3 style="color:#00ff41;margin:0 0 16px;font-size:16px">✏️ Editar Movimiento</h3>
     <input type="hidden" id="editId">
     <div class="modalForm">
       <input id="editDesc" placeholder="Descripción">
@@ -282,7 +312,6 @@
         <option value="ingreso">Ingreso</option>
         <option value="gasto">Gasto</option>
         <option value="pago_deuda_cuota">Pago de Deuda</option>
-
       </select>
       <select id="editCategoria">
         <option value="">Categoría</option>
@@ -306,7 +335,7 @@
 <!-- ══════ MODAL NUEVA DEUDA ══════ -->
 <div id="modalDeuda" class="modalOverlay">
   <div class="modalBox">
-    <h3 style="color:#f97316;margin:0 0 16px;font-size:16px">💳 Nueva Deuda</h3>
+    <h3 style="color:#ff8c00;margin:0 0 16px;font-size:16px">💳 Nueva Deuda</h3>
     <div class="modalForm">
       <input id="dNombre" placeholder="Nombre (ej: Tarjeta Bogotá, Hipoteca, Familiar)">
       <select id="dTipo">
@@ -334,7 +363,7 @@
       <div id="filaCuotas"><input id="dCuotas" type="number" placeholder="Nº de cuotas (0 = indefinido)"></div>
     </div>
     <div class="modalBtns">
-      <button onclick="agregarDeuda()" style="background:linear-gradient(135deg,#f97316,#ef4444)">+ Agregar</button>
+      <button onclick="agregarDeuda()" style="background:linear-gradient(135deg,#e07000,#e53535);color:#fff">+ Agregar</button>
       <button onclick="cerrarModalDeuda()" class="btnCancelar">Cancelar</button>
     </div>
   </div>
@@ -343,19 +372,19 @@
 <!-- ══════ MODAL PAGO DEUDA ══════ -->
 <div id="modalPagoDeuda" class="modalOverlay">
   <div class="modalBox">
-    <h3 id="tituloPago" style="color:#22c55e;margin:0 0 16px;font-size:15px">Registrar Pago</h3>
+    <h3 id="tituloPago" style="color:#00ff41;margin:0 0 16px;font-size:15px">Registrar Pago</h3>
     <input type="hidden" id="pagoDeudaId">
     <div class="modalForm">
       <input id="pagoFecha" type="date">
       <input id="pagoCuota" type="number" placeholder="Valor total del pago (cuota completa)">
       <input id="pagoCapital" type="number" placeholder="¿Cuánto de ese pago es capital?">
-      <p style="font-size:12px;color:#64748b;margin:0">El resto se calcula automáticamente como interés.</p>
+      <p style="font-size:12px;color:#94c494;margin:0">El resto se calcula automáticamente como interés.</p>
       <div id="filaPagoTasaVar" style="display:none">
         <input id="pagoTasaVar" type="number" step="0.01" placeholder="Tasa aplicada este período (%)">
       </div>
     </div>
     <div class="modalBtns">
-      <button onclick="registrarPagoDeuda()" style="background:linear-gradient(135deg,#22c55e,#16a34a)">✓ Registrar</button>
+      <button onclick="registrarPagoDeuda()" style="background:linear-gradient(135deg,#00aa33,#006b1a);color:#fff">✓ Registrar</button>
       <button onclick="cerrarPagoDeuda()" class="btnCancelar">Cancelar</button>
     </div>
   </div>
@@ -367,6 +396,24 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="script.js"></script>
 <script>actualizarFormInversion();</script>
+
+
+<!-- ══════ MODAL CAMBIAR NOMBRE ══════ -->
+<div id="modalNombre" class="modalOverlay" style="display:none">
+  <div class="modalBox" style="max-width:340px">
+    <h3 style="color:#006b1a;margin:0 0 16px;font-size:16px">✏️ Cambiar nombre</h3>
+    <div class="modalForm">
+      <input id="inputNombreNuevo" type="text" placeholder="Tu nombre o apodo" maxlength="30">
+    </div>
+    <div class="modalBtns">
+      <button onclick="guardarNombre()" style="background:linear-gradient(135deg,#00aa33,#006b1a);color:#fff">Guardar</button>
+      <button onclick="document.getElementById('modalNombre').style.display='none'" class="btnCancelar">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ FAB — Registrar Movimiento ══════ -->
+<button id="fabMovimiento" onclick="abrirPagina('movimientos')" title="Registrar movimiento">＋</button>
 
 </body>
 </html>
