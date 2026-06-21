@@ -462,3 +462,381 @@ td { padding: 9px 11px; border-bottom: 1px solid var(--gris2); color: var(--text
 
 #desktopNav { display: none; }
 @media (min-width: 900px) { #desktopNav { display: flex; } }
+/* ── DIVISAS ── */
+.divisaCard{background:#fff;border-radius:13px;padding:12px 14px;margin-bottom:8px;border:1px solid #e8ede8;border-left:4px solid #00b8d4;}
+#seccionDivisas{max-width:500px;margin:0 auto;}
+
+/* ── MODAL VENTA ── */
+#resumenVenta b{color:#446644;}
+/* ════════════════════════════════
+   SPARKLINES
+   ════════════════════════════════ */
+.sparkline {
+  display:block;
+  width:100% !important;
+  height:38px !important;
+  margin-top:6px;
+  opacity:.85;
+}
+.mini {
+  position:relative;
+  overflow:hidden;
+}
+
+/* Botones período sparkline */
+.spkPeriodBtn {
+  background:rgba(0,170,51,.08);
+  color:#9aaa9a;
+  border:1px solid #e8ede8;
+  padding:3px 10px;
+  border-radius:20px;
+  font-size:11px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all .2s;
+}
+.spkPeriodBtn.activo {
+  background:rgba(0,170,51,.18);
+  color:#006b1a;
+  border-color:#00aa33;
+}
+
+/* ════════════════════════════════
+   DIVISAS + CRIPTO
+   ════════════════════════════════ */
+.divisaCard {
+  background:#fff;
+  border-radius:13px;
+  padding:11px 14px;
+  margin-bottom:7px;
+  border:1px solid #e8ede8;
+  border-left:4px solid #00b8d4;
+  transition:transform .15s,box-shadow .15s;
+}
+.divisaCard.cripto {
+  border-left-color:#6c5ce7;
+}
+.divisaCard:active {
+  transform:scale(.98);
+  box-shadow:0 2px 8px rgba(0,184,212,.15);
+}
+#seccionDivisas {
+  max-width:500px;
+  margin:0 auto;
+}
+
+/* ════════════════════════════════
+   CONFIGURACIÓN
+   ════════════════════════════════ */
+.cfgCard {
+  background:#fff;
+  border:1px solid #e8ede8;
+  border-radius:16px;
+  padding:16px;
+  margin-bottom:12px;
+}
+.cfgCardTitle {
+  font-size:14px;
+  font-weight:700;
+  color:#006b1a;
+  margin:0 0 12px;
+  padding-bottom:8px;
+  border-bottom:1px solid #f0f5f0;
+}
+.cfgLabel {
+  font-size:12px;
+  color:#446644;
+  font-weight:600;
+  display:block;
+  margin-bottom:5px;
+}
+.cfgInput {
+  width:100%;
+  padding:12px 14px;
+  border:1.5px solid #ccd8cc;
+  border-radius:12px;
+  background:#f5f7f5;
+  color:#111811;
+  font-size:14px;
+  outline:none;
+  margin-bottom:12px;
+  box-sizing:border-box;
+}
+.cfgSelect {
+  width:100%;
+  padding:12px 14px;
+  border:1.5px solid #ccd8cc;
+  border-radius:12px;
+  background:#f5f7f5;
+  color:#111811;
+  font-size:14px;
+  outline:none;
+  -webkit-appearance:none;
+  margin-bottom:4px;
+  box-sizing:border-box;
+  cursor:pointer;
+}
+
+/* ════════════════════════════════
+   GRUPO B — GRÁFICAS REDISEÑO
+   ════════════════════════════════ */
+
+/* GraficaCard — clickable con hover */
+.graficaCard {
+  cursor: pointer;
+  transition: transform .18s, box-shadow .18s;
+  position: relative;
+}
+.graficaCard::after {
+  content: "🔍";
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity .2s;
+  pointer-events: none;
+}
+.graficaCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,100,30,.13);
+}
+.graficaCard:hover::after {
+  opacity: .6;
+}
+.graficaCard:active {
+  transform: scale(.98);
+}
+
+/* Treemap SVG container */
+.treemapSvg {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+/* Heatmap SVG container */
+.heatmapSvg {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+/* ════════════════════════════════
+   ZOOM MODAL
+   ════════════════════════════════ */
+#modalZoomGrafica {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+#modalZoomGrafica > div {
+  box-shadow: 0 24px 60px rgba(0,0,0,.35);
+  animation: zoomIn .25s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes zoomIn {
+  from { transform: scale(.88); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+#zoomAnalisis p {
+  margin: 0 0 7px;
+  line-height: 1.65;
+}
+#zoomAnalisis p:last-child { margin: 0; }
+#zoomTreemap svg, #zoomHeatmap svg {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Canvas zoom height */
+#zoomCanvas {
+  max-height: 340px;
+}
+
+/* ════════════════════════════════
+   GRUPO C — ZOOM MEJORADO
+   ════════════════════════════════ */
+#modalZoomGrafica {
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+#zoomBox {
+  box-shadow: 0 28px 70px rgba(0,0,0,.4);
+  animation: zoomModalIn .28s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes zoomModalIn {
+  from { transform:scale(.86) translateY(20px); opacity:0; }
+  to   { transform:scale(1)   translateY(0);    opacity:1; }
+}
+
+/* Stats bar */
+#zoomStats {
+  min-height: 52px;
+  background: #fafcfa;
+}
+#zoomStats:empty { display:none!important; }
+
+/* Hint text */
+#zoomHint {
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Reset zoom button pulse */
+#btnZoomReset {
+  animation: pulseSoft 1.4s ease infinite;
+}
+@keyframes pulseSoft {
+  0%,100% { box-shadow:0 0 0 0 rgba(0,170,51,0); }
+  50%      { box-shadow:0 0 0 4px rgba(0,170,51,0.18); }
+}
+
+/* Canvas cursor when zoom active */
+#zoomCanvas {
+  cursor: crosshair;
+}
+#zoomCanvas:active {
+  cursor: grabbing;
+}
+
+/* ════════════════════════════════
+   GRUPO D — ANALÍTICA KPIs
+   ════════════════════════════════ */
+.analiticaKpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 8px;
+  max-width: 640px;
+  margin: 0 auto 20px;
+}
+.akpi {
+  background: #fff;
+  border: 1px solid #e8ede8;
+  border-radius: 14px;
+  padding: 11px 8px 9px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform .16s, box-shadow .16s, border-color .16s;
+  position: relative;
+  overflow: hidden;
+}
+.akpi::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg,rgba(0,170,51,0.04),transparent);
+  pointer-events: none;
+}
+.akpi:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,100,30,.12);
+  border-color: #c8e8c8;
+}
+.akpi:active { transform: scale(.96); }
+.akpiIcon {
+  font-size: 18px;
+  display: block;
+  margin-bottom: 3px;
+}
+.akpiLabel {
+  font-size: 10px;
+  color: #9aaa9a;
+  font-weight: 600;
+  margin: 0 0 3px;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.akpiVal {
+  font-size: 14px;
+  font-weight: 800;
+  margin: 0 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.akpiDelta {
+  font-size: 10px;
+  margin: 0;
+  min-height: 14px;
+}
+
+/* Colores KPI */
+.akpiVerde  { color: #006b1a; }
+.akpiRojo   { color: #ef4444; }
+.akpiNaranja{ color: #f97316; }
+.akpiMorado { color: #6c5ce7; }
+.akpiCyan   { color: #00b8d4; }
+
+/* Ancla highlight */
+.graficaCard {
+  transition: transform .18s, box-shadow .18s, outline .2s;
+}
+
+/* Selector meses mejorado */
+.selectorMeses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.btnMes {
+  background: rgba(0,170,51,.07);
+  color: #446644;
+  border: 1px solid #e8ede8;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .18s;
+  white-space: nowrap;
+}
+.btnMes.activo {
+  background: rgba(0,170,51,.18);
+  color: #006b1a;
+  border-color: #00aa33;
+}
+.btnMes:hover:not(.activo) {
+  background: rgba(0,170,51,.12);
+  border-color: #b8d8b8;
+}
+
+/* ════════════════════════════════
+   GRUPO E — SPLIT / DRIP / TRANSFER / P&G
+   ════════════════════════════════ */
+
+/* P&G Widget */
+#pnGWidget {
+  max-width: 500px;
+  margin: 0 auto 8px;
+}
+
+/* Tabla inversiones — columna acciones más ancha para los 7 botones */
+.invAcciones {
+  min-width: 80px;
+  vertical-align: top;
+  padding-top: 8px;
+}
+.invAcciones button {
+  margin-bottom: 3px;
+  transition: opacity .15s, transform .1s;
+}
+.invAcciones button:hover { opacity: .85; }
+.invAcciones button:active { transform: scale(.95); }
+
+/* Preview split/drip */
+#splitPreview, #dripPreview {
+  margin-top: 8px;
+}
+
+/* Lotes ESP container */
+#lotesEspContainer label {
+  line-height: 1.5;
+}
+#lotesEspContainer input[type="number"] {
+  border: 1.5px solid #ccd8cc;
+  background: #f5f7f5;
+  outline: none;
+  color: #111811;
+}
