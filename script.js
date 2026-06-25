@@ -2204,7 +2204,7 @@ function abrirZoomGrafica(chartId,titulo){
             display:true,
             labels:{color:"#224422",font:{size:12},padding:16,usePointStyle:true}
           },
-          tooltip:richTooltip,
+          tooltip:origChart.config.type==="radar"?{enabled:false}:richTooltip,
           ...(hasZoomPlugin?{zoom:zoomPlugin}:{})
         },
         scales:origChart.config.type==="radar"?undefined:
