@@ -64,61 +64,45 @@
       <h1 id="saldo">$0</h1>
       <span id="fechaActual"></span>
     </div>
-    <!-- Selector período sparklines -->
-    <div style="display:flex;justify-content:flex-end;max-width:500px;margin:0 auto 6px;gap:6px">
-      <span style="font-size:11px;color:#9aaa9a;align-self:center">Tendencia:</span>
-      <button onclick="guardarPreferencia('sparkline','6')"  id="spkBtn6"  class="spkPeriodBtn activo">6m</button>
-      <button onclick="guardarPreferencia('sparkline','12')" id="spkBtn12" class="spkPeriodBtn">12m</button>
-      <button onclick="guardarPreferencia('sparkline','todo')" id="spkBtnTodo" class="spkPeriodBtn">Todo</button>
-    </div>
-
     <div class="resumen">
       <div class="mini ingreso">
         <div class="miniLeft"><span class="miniIcon">💵</span><span class="miniLabel">Ingresos</span></div>
         <h2 id="ingresos">$0</h2>
-        <canvas id="spk-ingresos" class="sparkline"></canvas>
       </div>
       <div class="mini gasto">
         <div class="miniLeft"><span class="miniIcon">💸</span><span class="miniLabel">Gastos caja</span></div>
         <h2 id="gastos">$0</h2>
-        <canvas id="spk-gastos" class="sparkline"></canvas>
       </div>
       <div class="mini" style="border-left:4px solid #f97316">
         <div class="miniLeft"><span class="miniIcon">💳</span><span class="miniLabel">Pagos deuda</span></div>
         <h2 id="pagosDeuda">$0</h2>
-        <canvas id="spk-pagosDeuda" class="sparkline"></canvas>
       </div>
       <div class="mini ahorro">
         <div class="miniLeft"><span class="miniIcon">🏦</span><span class="miniLabel">Ahorro / Caja</span></div>
         <h2 id="ahorro">$0</h2>
-        <canvas id="spk-saldo" class="sparkline"></canvas>
       </div>
       <div class="mini inversiones">
         <div class="miniLeft"><span class="miniIcon">📈</span><span class="miniLabel">Inversiones</span></div>
         <h2 id="valorInversiones">$0</h2>
-        <canvas id="spk-inversiones" class="sparkline"></canvas>
       </div>
       <div class="mini deuda">
         <div class="miniLeft"><span class="miniIcon">💳</span><span class="miniLabel">Deuda Neta</span></div>
         <h2 id="deudaNeta">$0</h2>
-        <canvas id="spk-deudaNeta" class="sparkline"></canvas>
       </div>
       <div class="mini patrimonio">
         <div class="miniLeft"><span class="miniIcon">💎</span><span class="miniLabel">Patrimonio</span></div>
         <h2 id="patrimonio">$0</h2>
-        <canvas id="spk-patrimonio" class="sparkline"></canvas>
       </div>
       <div class="mini" style="border-left:4px solid #22c55e">
         <div class="miniLeft"><span class="miniIcon">🛡️</span><span class="miniLabel">Tasa Ahorro</span></div>
         <h2 id="tasaAhorro">0%</h2>
-        <canvas id="spk-tasaAhorro" class="sparkline"></canvas>
       </div>
     </div>
 
     <!-- SECCIÓN DIVISAS + CRIPTO -->
     <div style="max-width:500px;margin:16px auto 0">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <h3 style="font-size:14px;font-weight:700;color:#00b8d4;margin:0">💱 Divisas &amp; 🪙 Cripto</h3>
+        <h3 style="font-size:14px;font-weight:700;color:#00b8d4;margin:0">💱 Divisas _</h3>
         <div style="display:flex;gap:6px">
           <button onclick="abrirModalTasas()" style="background:rgba(0,184,212,.15);color:#00b8d4;border:1px solid rgba(0,184,212,.3);padding:5px 9px;border-radius:8px;font-size:11px;font-weight:700">📋 Tasas</button>
           <button onclick="abrirModalComprarDivisa()" style="background:rgba(0,184,212,.15);color:#00b8d4;border:1px solid rgba(0,184,212,.3);padding:5px 9px;border-radius:8px;font-size:11px;font-weight:700">+ Comprar</button>
@@ -190,14 +174,12 @@
     <!-- Divisa del activo -->
     <div id="filaDivisa" style="display:none">
       <select id="invDivisa" onchange="actualizarCamposTCInversion()" style="width:100%;padding:13px;border:1.5px solid #ccd8cc;border-radius:13px;background:#f5f7f5;color:#111811;font-size:14px;outline:none;-webkit-appearance:none">
-        <option value="COP">🇨🇴 COP — Peso colombiano</option>
-        <option value="USD">🇺🇸 USD — Dólar</option>
-        <option value="EUR">🇪🇺 EUR — Euro</option>
+        <option value="COP">💵 COP — Peso colombiano</option>
+        <option value="USD">💵 USD — Dólar</option>
+        <option value="EUR">💵 EUR — Euro</option>
         <option value="USDT">💵 USDT — Tether</option>
         <option value="USDC">💵 USDC — USD Coin</option>
-        <option value="BTC">₿ BTC — Bitcoin</option>
-        <option value="ETH">Ξ ETH — Ethereum</option>
-        <option value="GBP">🇬🇧 GBP — Libra</option>
+        <option value="GBP">💵 GBP — Libra</option>
       </select>
       <p style="font-size:11px;color:#94c494;margin-top:4px">Divisa nativa del activo — los precios viven en esta moneda</p>
     </div>
@@ -331,7 +313,6 @@
     <div class="graficaCard" id="ancla-graficaPrincipal"      data-id="graficaPrincipal">     <h3>💧 Flujo de Caja — Waterfall Mensual</h3>       <canvas id="graficaPrincipal"></canvas></div>
     <div class="graficaCard" id="ancla-graficaMensual"        data-id="graficaMensual">       <h3>📈 Ingresos vs Gastos — Evolución</h3>           <canvas id="graficaMensual"></canvas></div>
     <div class="graficaCard" id="ancla-graficaDeuda"          data-id="graficaDeuda">         <h3>🏦 Caja Acumulada vs Deuda Viva</h3>             <canvas id="graficaDeuda"></canvas></div>
-    <div class="graficaCard" id="ancla-graficaCategorias"     data-id="graficaCategorias">    <h3>🗂️ Gastos por Categoría — Treemap</h3>           <canvas id="graficaCategorias"></canvas></div>
     <div class="graficaCard" id="ancla-graficaCategoriasMensual" data-id="graficaCategoriasMensual"><h3>📊 Categorías por Mes — Apilado</h3>          <canvas id="graficaCategoriasMensual"></canvas></div>
     <div class="graficaCard" id="ancla-graficaRadarGastos"    data-id="graficaRadarGastos">   <h3>🕸️ Perfil de Gastos — Radar</h3>                <canvas id="graficaRadarGastos"></canvas></div>
     <div class="graficaCard" id="ancla-graficaHeatmap"        data-id="graficaHeatmap">       <h3>🔥 Mapa de Calor — Gasto por Día</h3>            <canvas id="graficaHeatmap"></canvas></div>
@@ -342,6 +323,8 @@
     <div class="graficaCard" id="ancla-graficaFuentesIngresos" data-id="graficaFuentesIngresos"><h3>💵 Fuentes de Ingreso — Evolución</h3>          <canvas id="graficaFuentesIngresos"></canvas></div>
     <div class="graficaCard" id="ancla-graficaDivisas"        data-id="graficaDivisas">       <h3>💎 Evolución del Patrimonio</h3>                 <canvas id="graficaDivisas"></canvas></div>
   </div>
+  <!-- Composición dinámica por tipo de activo -->
+  <div id="composicionInvGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-top:16px;padding:0 16px 16px"></div>
 </section>
 
 <!-- ══════ AJUSTES ══════ -->
@@ -368,17 +351,6 @@
         <option value="LIFO">LIFO — Último en entrar, primero en salir</option>
       </select>
       <p style="font-size:11px;color:#9aaa9a;margin:4px 0 0">Aplica a nuevas inversiones. Cada activo puede sobreescribir este valor.</p>
-    </div>
-
-    <!-- Preferencias de visualización -->
-    <div class="cfgCard">
-      <h3 class="cfgCardTitle">📈 Visualización</h3>
-      <label class="cfgLabel">Período de sparklines en inicio</label>
-      <select id="cfgSparkline" class="cfgSelect">
-        <option value="6">Últimos 6 meses</option>
-        <option value="12">Últimos 12 meses</option>
-        <option value="todo">Todo el histórico</option>
-      </select>
     </div>
 
     <button onclick="aplicarConfiguracion()" style="background:linear-gradient(135deg,#00aa33,#006b1a);color:#fff;font-size:15px;padding:14px">💾 Guardar preferencias</button>
@@ -491,10 +463,9 @@
     <p style="font-size:12px;color:#9aaa9a;margin:-8px 0 14px">Registra la compra de divisas. Se descuenta de tu caja y queda como posición en esa moneda.</p>
     <div id="formCompraDivisa" class="modalForm">
       <select id="compDivisaNombre" onchange="actualizarTCSugerida()" style="width:100%;padding:13px;border:1.5px solid #ccd8cc;border-radius:13px;background:#f5f7f5;color:#111811;font-size:14px;outline:none;-webkit-appearance:none;margin-bottom:10px">
-        <option value="USD">🇺🇸 USD — Dólar</option><option value="EUR">🇪🇺 EUR — Euro</option>
+        <option value="USD">💵 USD — Dólar</option><option value="EUR">💵 EUR — Euro</option>
         <option value="USDT">💵 USDT — Tether</option><option value="USDC">💵 USDC — USD Coin</option>
-        <option value="GBP">🇬🇧 GBP — Libra</option><option value="BTC">₿ BTC — Bitcoin</option>
-        <option value="ETH">Ξ ETH — Ethereum</option>
+        <option value="GBP">💵 GBP — Libra</option>
       </select>
       <input id="compCantidadDivisa" type="number" step="0.00000001" placeholder="Cantidad a comprar (ej: 500 USD)" style="width:100%;padding:13px;border:1.5px solid #ccd8cc;border-radius:13px;background:#f5f7f5;color:#111811;font-size:14px;outline:none;margin-bottom:10px">
       <input id="compTC" type="number" step="0.01" placeholder="Tasa de cambio (COP por 1 unidad)" style="width:100%;padding:13px;border:1.5px solid #ccd8cc;border-radius:13px;background:#f5f7f5;color:#111811;font-size:14px;outline:none;margin-bottom:6px">
@@ -660,9 +631,9 @@
 </div>
 
 <!-- ══════ MODAL ZOOM GRÁFICA ══════ -->
-<div id="modalZoomGrafica" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,0.85);align-items:flex-start;justify-content:center;padding:16px;flex-direction:column;overflow-y:auto">
-  <div id="zoomBox" style="background:#fff;border-radius:20px;width:100%;max-width:820px;margin:auto;position:relative;overflow:hidden">
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 12px;border-bottom:1px solid #e8ede8;background:#fafcfa">
+<div id="modalZoomGrafica" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,0.85);justify-content:center;padding:20px 16px 32px;overflow-y:auto">
+  <div id="zoomBox" style="background:#fff;border-radius:20px;width:100%;max-width:820px;margin:0 auto;position:relative">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 12px;border-bottom:1px solid #e8ede8;background:#fafcfa;border-radius:20px 20px 0 0">
       <div>
         <h3 id="zoomTitulo" style="font-size:15px;font-weight:800;color:#006b1a;margin:0 0 2px"></h3>
         <p id="zoomSubtitulo" style="font-size:11px;color:#9aaa9a;margin:0"></p>
@@ -681,7 +652,7 @@
         <div id="zoomHeatmap"  style="display:none;width:100%;height:360px"></div>
       </div>
     </div>
-    <div style="padding:14px 16px 16px">
+    <div style="padding:8px 16px 16px">
       <div id="zoomAnalisis" style="background:#f0faf0;border-radius:12px;padding:14px;font-size:13px;color:#224422;line-height:1.7;border-left:4px solid #00aa33"></div>
     </div>
   </div>

@@ -238,7 +238,8 @@ button {
 button:active { transform: scale(.97); }
 
 /* ─── CANVAS ─── */
-canvas { width: 100% !important; height: 200px !important; display: block; }
+canvas { display: block; }
+.graficaCard canvas, #zoomCanvas { width: 100% !important; }
 
 /* ─── GRÁFICAS ─── */
 .graficas { display: flex; flex-direction: column; gap: 18px; max-width: 500px; margin: auto; }
@@ -474,7 +475,7 @@ td { padding: 9px 11px; border-bottom: 1px solid var(--gris2); color: var(--text
 .sparkline {
   display:block;
   width:100% !important;
-  height:38px !important;
+  height:44px !important;
   margin-top:6px;
   opacity:.85;
 }

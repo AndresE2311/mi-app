@@ -1,0 +1,313 @@
+# 🧪 Guía Completa de Prueba — Finanzas Personales
+> Sigue las operaciones en orden. Cada operación indica qué debe cambiar en la app.
+
+---
+
+## PASO 0 — Preparación inicial
+
+Antes de empezar, registra las tasas de cambio actuales:
+
+1. **Inicio → botón "📋 Tasas"**
+   - USD: `4.150`
+   - EUR: `4.500`
+   - Guardar
+
+✅ Debe verse en la sección Divisas & Cripto del inicio con las tasas registradas.
+
+---
+
+## PASO 1 — Ingresos del mes
+
+### 1.1 Salario principal
+- Sección: **Movimientos**
+- Tipo: `Ingreso`
+- Categoría: `Trabajo` → Subcategoría: `Salario`
+- Método: `Transferencia`
+- Fecha: `2024-06-05`
+- Descripción: `Salario junio`
+- Valor: `6.500.000`
+- Guardar
+
+✅ **Inicio:** "Ahorro / Caja" sube a $6.500.000. Sparklines se actualizan.
+✅ **Analítica:** "Ingresos" sube a $6.500.000. Gráfica mensual lo refleja.
+
+### 1.2 Ingreso freelance
+- Tipo: `Ingreso`
+- Categoría: `Trabajo` → Subcategoría: `Freelance`
+- Método: `Nequi`
+- Fecha: `2024-06-10`
+- Descripción: `Proyecto web cliente`
+- Valor: `800.000`
+- Guardar
+
+✅ **Inicio:** Caja sube a $7.300.000. Ingresos total = $7.300.000.
+
+---
+
+## PASO 2 — Gastos cotidianos
+
+### 2.1 Supermercado
+- Tipo: `Gasto`
+- Categoría: `Alimentación` → Subcategoría: `Mercado`
+- Método: `Débito`
+- Fecha: `2024-06-07`
+- Descripción: `Mercado semanal`
+- Valor: `320.000`
+- Guardar
+
+✅ **Inicio:** Caja baja a $6.980.000.
+✅ **Analítica:** "Gastos" aparece $320.000. Mapa de calor marca el viernes de la semana 1.
+
+### 2.2 Restaurante
+- Tipo: `Gasto`
+- Categoría: `Alimentación` → Subcategoría: `Restaurante`
+- Método: `Efectivo`
+- Fecha: `2024-06-12`
+- Descripción: `Almuerzo negocios`
+- Valor: `85.000`
+- Guardar
+
+### 2.3 Transporte
+- Tipo: `Gasto`
+- Categoría: `Transporte` → Subcategoría: `Taxi / App`
+- Método: `Nequi`
+- Fecha: `2024-06-14`
+- Descripción: `Uber semana`
+- Valor: `45.000`
+- Guardar
+
+### 2.4 Servicios públicos
+- Tipo: `Gasto`
+- Categoría: `Hogar` → Subcategoría: `Servicios`
+- Método: `Débito`
+- Fecha: `2024-06-15`
+- Descripción: `Agua + luz + gas`
+- Valor: `280.000`
+- Guardar
+
+✅ **Analítica después de los 4 gastos:**
+- Total gastos ≈ $730.000
+- Balance = $7.300.000 - $730.000 = $6.570.000
+- Gráfica de categorías debe mostrar Alimentación como categoría más grande.
+- Mapa de calor debe verse en tarjeta pequeña (sin hacer click) con los días marcados.
+
+---
+
+## PASO 3 — Deudas
+
+### 3.1 Crear crédito de consumo
+- Sección: **Deudas → "Nueva Deuda"**
+- Nombre: `Crédito consumo Banco Bogotá`
+- Tipo: `Crédito bancario`
+- Capital: `8.000.000`
+- Fecha: `2024-06-01`
+- Tipo tasa: `Fija`
+- Tasa mensual: `1.8`
+- Cuotas: `24`
+- Guardar
+
+✅ **Deudas:** aparece la tarjeta con saldo pendiente $8.000.000.
+✅ **Mini-gráfica de saldo vivo** debe aparecer inmediatamente mostrando solo el punto inicial.
+✅ **Analítica:** "Deuda Neta" sube. Patrimonio baja.
+
+### 3.2 Registrar 2 pagos a esa deuda
+**Pago 1:**
+- Deudas → tarjeta → "Registrar Pago"
+- Fecha: `2024-06-30`
+- Cuota total: `450.000`
+- Capital pagado: `305.600`
+- Interés: `144.000`
+- Tasa aplicada: `1.8`
+- Guardar
+
+✅ **Gráfica de deuda:** baja del punto inicial (~$8.000.000) al saldo nuevo (~$7.694.400).
+✅ **Barra de progreso:** muestra ~3.8% pagado.
+✅ **Historial (botón 📋):** aparece la fila con los datos del pago.
+
+**Pago 2:**
+- Fecha: `2024-07-31`
+- Cuota total: `450.000`
+- Capital pagado: `311.100`
+- Interés: `138.500`
+- Tasa aplicada: `1.8`
+- Guardar
+
+✅ **Gráfica de deuda:** ahora tiene 3 puntos (inicial, pago 1, pago 2) — línea descendente.
+
+### 3.3 Crear tarjeta de crédito
+- Nombre: `Davivienda Crédito`
+- Tipo: `Tarjeta de crédito`
+- Capital: `5.000.000`
+- Fecha: `2024-06-01`
+- Tipo tasa: `Sin tasa` (los cargos se registran por movimiento)
+- Guardar
+
+---
+
+## PASO 4 — Movimiento de pago de deuda
+
+- Sección: **Movimientos**
+- Tipo: `Pago de Deuda`
+- Vincular a deuda: `Crédito consumo Banco Bogotá`
+- Método: `Débito`
+- Fecha: `2024-06-30`
+- Descripción: `Cuota junio crédito consumo`
+- Valor: `450.000`
+- Guardar
+
+✅ **Inicio:** Caja baja $450.000 adicionales.
+✅ **Analítica:** "Pago Deuda" muestra $450.000. Se ve en gráfica principal.
+
+---
+
+## PASO 5 — Inversiones en COP (Acción local)
+
+### 5.1 Comprar acciones Ecopetrol
+- Sección: **Inversiones**
+- Tipo: `Acción`
+- Nombre: `EC`
+- Bróker: `Trii`
+- Cantidad: `500`
+- Precio compra: `2.100`
+- Precio actual: `2.180`
+- Divisa: `COP`
+- Origen: `Capital externo`
+- Método costo: `FIFO`
+- Costos: `5.000`
+- Agregar
+
+✅ **Inversiones:** aparece tarjeta. Valor compra = $1.050.000. Valor actual = $1.090.000. P&G = +$40.000 (~+3.8%).
+✅ **Inicio:** "Inversiones" sube. Patrimonio sube.
+✅ **Analítica:** P&G Total en positivo.
+
+### 5.2 Comprar CDT
+- Tipo: `CDT`
+- Nombre: `CDT Bancolombia 90 días`
+- Bróker: `Bancolombia`
+- Capital: `5.000.000`
+- Tasa EA: `12.5`
+- Fecha inicio: `2024-06-01`
+- Fecha vencimiento: `2024-08-30`
+- Origen: `Desde mi caja (COP)`
+- Agregar
+
+✅ **Inversiones:** aparece tarjeta de CDT con rendimiento proyectado.
+✅ **Inicio:** Caja baja $5.000.000 (origen = caja). Inversiones sube.
+
+---
+
+## PASO 6 — Inversión en USD (prueba de divisas + FX)
+
+### 6.1 Comprar ETF en dólares
+- Tipo: `ETF`
+- Nombre: `SPY`
+- Bróker: `Interactive Brokers`
+- Cantidad: `3`
+- Precio compra: `530`
+- Precio actual: `541`
+- Divisa: `USD`
+- TC compra: `4.150`
+- Origen: `Capital externo`
+- Método costo: `Costo Promedio`
+- Costos: `3.500`
+- Agregar
+
+✅ **Inversiones:** valor compra ≈ $6.578.500 COP. Valor actual ≈ $6.719.700 COP.
+✅ P&G en COP refleja tanto la ganancia del activo ($11 USD × 3 = $33 USD) como la diferencia de TC si cambió.
+✅ **Analítica:** gráfica de inversiones muestra la posición.
+
+### 6.2 Comprar divisa USD directamente
+- Inicio → "💱 Divisas & Cripto" → **+ Comprar**
+- Divisa: `USD`
+- Cantidad: `200`
+- TC: `4.150`
+- Guardar
+
+✅ **Inicio:** aparece posición USD en la sección de divisas con saldo $200 USD.
+✅ Costo promedio COP = $4.150 por USD.
+
+---
+
+## PASO 7 — Prueba de los filtros del Inicio
+
+Con todos los datos anteriores cargados:
+
+1. Haz click en **6m** → las sparklines deben mostrar los últimos 6 meses. El botón "6m" debe quedar resaltado (fondo verde/oscuro).
+2. Haz click en **12m** → cambia a 12 meses. El botón "12m" queda activo, "6m" se desactiva.
+3. Haz click en **Todo** → muestra todos los datos históricos.
+
+✅ **Verificar:** en cada click el botón activo cambia de apariencia Y las sparklines se redibujan.
+
+---
+
+## PASO 8 — Analítica (Gráficas)
+
+Ir a **Estadísticas / Analítica** y verificar:
+
+### 8.1 Vista de tarjetas pequeñas
+- Todas las gráficas deben verse en la cuadrícula sin deformarse.
+- **Mapa de Calor** debe verse en la tarjeta pequeña (sin hacer click), con colores más intensos en los días de mayor gasto.
+- En gráficas con múltiples líneas (ej. "Mensual"), al hacer click en el nombre de una serie en la leyenda dentro de la tarjeta: la serie se oculta/muestra **sin abrir el modal de zoom**.
+
+### 8.2 Modal de zoom
+- Hacer click en el área del canvas de cualquier gráfica (no en la leyenda) → debe abrirse el modal grande.
+- Dentro del modal debe verse:
+  - La gráfica sin distorsión, bien proporcional.
+  - El análisis de texto debajo, con una separación moderada (no excesiva).
+  - Si el análisis es largo, se debe poder **hacer scroll** para leer todo sin que el texto quede cortado.
+  - El botón ✕ cierra el modal.
+
+### 8.3 Mapa de calor en zoom
+- Hacer click en la tarjeta del Mapa de Calor.
+- En el modal debe verse la versión grande con los días de la semana y semanas del mes claramente etiquetados.
+
+---
+
+## PASO 9 — Venta parcial de inversión
+
+- Inversiones → tarjeta SPY → botón "Vender"
+- Cantidad: `1`
+- Precio venta: `545`
+- TC venta: `4.180`
+- Comisión: `2.000`
+- Impuesto: `0`
+- Destino: `COP`
+- Guardar
+
+✅ **SPY:** cantidad baja a 2 unidades. Cantidad restante en el lote actualizada.
+✅ **P&G:** refleja ganancia realizada (precio venta 545 > precio compra 530) + diferencia FX (4.180 > 4.150).
+✅ **Analítica:** P&G Total sube por la ganancia realizada.
+
+---
+
+## PASO 10 — Verificación de informes en Analítica
+
+Ir a **Estadísticas** y verificar que los siguientes KPIs sean coherentes con todo lo registrado:
+
+| KPI | Valor esperado aproximado |
+|---|---|
+| Ingresos | ~$7.300.000 (salario + freelance) |
+| Gastos | ~$730.000 (4 gastos cotidianos) |
+| Pago Deuda | ~$450.000 (cuota crédito consumo) |
+| Balance | ~$6.120.000 (ingresos - gastos - pagos) |
+| Tasa de Ahorro | ~83% (balance / ingresos) |
+| Inversiones | valor de mercado de EC + CDT + SPY (2u) |
+| Deuda Neta | saldo vivo crédito consumo (~$7.383.300) + cupo tarjeta |
+| P&G Total | ganancias realizadas SPY + no realizadas EC |
+
+Si algún número no cuadra, el bug estará en la operación que alimenta ese KPI específico.
+
+---
+
+## 🔴 Errores que indican problemas reales
+
+| Síntoma | Causa probable |
+|---|---|
+| Botones 6m/12m/Todo no cambian de color | `sincronizarBotonesSparkline` no se llama al hacer click |
+| Gráfica de deuda no aparece | Canvas `dChart_{id}` no se crea antes de `dibujarGraficaDeuda` |
+| Mapa de calor no se ve en tarjeta pequeña | `dibujarHeatmap` no está renderizando el SVG |
+| Click en leyenda abre zoom | `inicializarZoomGraficas` no detecta hit sobre la leyenda |
+| Análisis de texto cortado en zoom | `overflow:hidden` activo en el contenedor del modal |
+| 403 en todas las tablas Supabase | Faltan los GRANTs — correr el bloque de permisos |
+| 404 en `operaciones_corporativas` | No se corrió `schema_operaciones_corporativas.sql` |
+| Gráficas deformadas / aplastadas | Falta `maintainAspectRatio:false` en la configuración del chart |
